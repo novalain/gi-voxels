@@ -1,0 +1,25 @@
+{
+  "name": "siick-engine",
+  "version": "1.0.0",
+  "description": "Simple data-oriented WebGL2 engine\"",
+  "main": "lib/siick-engine.js",
+  "scripts": {
+    "build": "webpack --env build",
+    "dev": "webpack-dev-server --env dev --progress --colors --watch --host 0.0.0.0 --open"
+  },
+  "keywords": [
+    "webgl2",
+    "es6"
+  ],
+  "author": "Michael Novén",
+  "license": "MIT",
+  "devDependencies": {
+    "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
+    "webpack": "^3.6.0",
+    "webpack-dev-server": "^2.8.2",
+    "yargs": "^9.0.1"
+  },
+  "dependencies": {
+    "gl-matrix": "^2.4.0"
+  }
+}
