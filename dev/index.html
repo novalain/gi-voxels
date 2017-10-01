@@ -32,8 +32,8 @@
       const render = function() {
         requestAnimationFrame(render);
 
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+        cube.rotation[0] += 0.01;
+        cube.rotation[1] += 0.01;
 
         renderer.render(scene, undefined);
       }

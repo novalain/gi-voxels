@@ -1,25 +1,19 @@
-import Object3 from './object';
+import Object from './object.js';
 import { vec3, mat3, mat4, quat } from 'gl-matrix';
 import { glContext } from '../renderer/renderer.js'
 
 import { createAndCompileProgram } from '../renderer/renderer_utils.js'
-//import { getContext } from '../session';
 
-var cubeRotation = 0;
-
-class Mesh {
+class Mesh extends Object {
   constructor(geometry/*,material*/) {
-    this.position = vec3.create();
-    this.rotation = vec3.create();
-    this.scale = vec3.fromValues(1, 1, 1);
-    this.quat = quat.create();
+    super();
 
-    this.geometry = geometry;
-    this.modelMatrix = mat4.create();
 
     // Init opengl buffers
     const gl = glContext();
     this.buffers = this.initBuffers(gl, geometry);
+
+    // TODO: Material
 
     const vsSource = `
       attribute vec4 aVertexPosition;
@@ -41,10 +35,7 @@ class Mesh {
     `;
 
     const shaderProgram = createAndCompileProgram(gl, vsSource, fsSource);
-    // Collect all the info needed to use the shader program.
-    // Look up which attributes our shader program is using
-    // for aVertexPosition, aVevrtexColor and also
-    // look up uniform locations.
+
     this.programInfo = {
       program: shaderProgram,
       attribLocations: {
@@ -55,41 +46,6 @@ class Mesh {
         modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
       },
     };
-
-
-
-    //this.material = 'RED';
-
-      // // assign attributes
-      // Object.assign(this.material.attributes, {
-      //     a_position: {
-      //         type: 'vec3',
-      //         value: this.geometry.positions,
-      //     }
-      //     // a_normal: {
-      //     //     type: 'vec3',
-      //     //     value: this.geometry.normals,
-      //     // },
-      //     // a_uv: {
-      //     //     type: 'vec2',
-      //     //     value: this.geometry.uvs,
-      //     // },
-      // });
-
-      // assign uniforms
-      // Object.assign(this.material.uniforms, {
-      //     modelMatrix: {
-      //         type: 'mat4',
-      //         value: this.modelMatrix,
-      //     },
-      //     normalMatrix: {
-      //         type: 'mat3',
-      //         value: this.normalMatrix,
-      //     },
-      // });
-
-      // pass indices to material so we can bind buffers
-      //Object.assign(this.material, { indices: this.geometry.indices });
   }
 
   initBuffers(gl, geometry) {
@@ -111,34 +67,14 @@ class Mesh {
     };
   }
 
-  update() {
-    mat4.identity(this.modelMatrix);
-
-    mat4.translate(this.modelMatrix,     // destination matrix
-                   this.modelMatrix,     // matrix to translate
-                   [0.0, 0.0, -5.0]);  // amount to translate
-    mat4.rotate(this.modelMatrix,  // destination matrix
-                this.modelMatrix,  // matrix to rotate
-                cubeRotation,     // amount to rotate in radians
-                [0, 0, 1]);       // axis to rotate around (Z)
-    mat4.rotate(this.modelMatrix,  // destination matrix
-                this.modelMatrix,  // matrix to rotate
-                cubeRotation * .7,// amount to rotate in radians
-                [0, 1, 0]);       // axis to rotate around (X)
-    cubeRotation += 0.01;
-
-  }
-
   render() {
-
     const gl = glContext();
     const fieldOfView = 35 * Math.PI / 180;   // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const zNear = 0.1;
     const zFar = 1000.0;
     const projectionMatrix = mat4.create();
-    // note: glmatrix.js always has the first argument
-    // as the destination to receive the result.
+
     mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.position);
