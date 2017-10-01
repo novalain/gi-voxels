@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <title>Hello World</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      html, body {
+        margin: 0;
+        background-color: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="/webpack-dev-server.js"></script>
+    <script src="/dist/siick.js"></script>
+    <script type="text/javascript">
+
+      const scene = new siick.Scene();
+      //const camera = new siick.PerspectiveCamera(fov, ratio, near, far)
+      const renderer = new siick.Renderer();
+      //renderer.setClearColor()
+      //renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // Append Renderer to DOM
+      //document.body.appendChild( renderer.domElement );
+
+      const geometry = new siick.Cube(0.5, 0.5, 0.5);
+      //const material = new siick.MeshBasicMaterial({ color ... })
+      const cube = new siick.Mesh(geometry/*, material*/);
+      scene.addModel(cube);
+
+      const render = function() {
+        requestAnimationFrame(render);
+
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+
+        renderer.render(scene, undefined);
+      }
+
+      render();
+    </script>
+
+  </body>
+</html>
+
