@@ -42,7 +42,6 @@ class Renderer {
     this.then = this.now;
 
     const clear = true;
-
     const gl = this.context;
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -55,8 +54,9 @@ class Renderer {
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
 
+    camera.update();
     // Should go into SCENE
-    scene.traverse();
+    scene.traverse(camera);
   }
 }
 

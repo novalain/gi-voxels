@@ -19,7 +19,7 @@ class Object {
     quat.rotateZ(this.quaternion, this.quaternion, this.rotation[2]);
 
     const axisAngle = quat.getAxisAngle(this.quaternionAxisAngle, this.quaternion);
-    mat4.translate(this.modelMatrix, this.modelMatrix, [0.0, 0.0, -5.0]);
+    mat4.translate(this.modelMatrix, this.modelMatrix, this.position);
     mat4.rotate(this.modelMatrix, this.modelMatrix, axisAngle, this.quaternionAxisAngle);
     mat4.scale(this.modelMatrix, this.modelMatrix, this.scale);
   }

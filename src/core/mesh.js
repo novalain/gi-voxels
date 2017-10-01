@@ -1,8 +1,7 @@
 import Object from './object.js';
 import { vec3, mat3, mat4, quat } from 'gl-matrix';
-import { glContext } from '../renderer/renderer.js'
-
-import { createAndCompileProgram } from '../renderer/renderer_utils.js'
+import { glContext } from '../renderer/renderer.js';
+import { createAndCompileProgram } from '../renderer/renderer_utils.js';
 
 class Mesh extends Object {
   constructor(geometry/*,material*/) {
@@ -67,15 +66,8 @@ class Mesh extends Object {
     };
   }
 
-  render() {
+  render(camera) {
     const gl = glContext();
-    const fieldOfView = 35 * Math.PI / 180;   // in radians
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    const zNear = 0.1;
-    const zFar = 1000.0;
-    const projectionMatrix = mat4.create();
-
-    mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.position);
     gl.enableVertexAttribArray(
@@ -94,7 +86,7 @@ class Mesh extends Object {
     gl.uniformMatrix4fv(
         this.programInfo.uniformLocations.projectionMatrix,
         false,
-        projectionMatrix);
+        camera.projectionMatrix);
     gl.uniformMatrix4fv(
         this.programInfo.uniformLocations.modelViewMatrix,
         false,

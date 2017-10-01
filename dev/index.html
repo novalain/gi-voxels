@@ -16,26 +16,32 @@
     <script type="text/javascript">
 
       const scene = new siick.Scene();
-      //const camera = new siick.PerspectiveCamera(fov, ratio, near, far)
+      const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
       const renderer = new siick.Renderer();
-      //renderer.setClearColor()
-      //renderer.setSize(window.innerWidth, window.innerHeight);
-
-      // Append Renderer to DOM
-      //document.body.appendChild( renderer.domElement );
 
       const geometry = new siick.Cube(0.5, 0.5, 0.5);
       //const material = new siick.MeshBasicMaterial({ color ... })
       const cube = new siick.Mesh(geometry/*, material*/);
-      scene.addModel(cube);
+      const cube2 = new siick.Mesh(geometry);
 
-      const render = function() {
+      scene.add(cube2);
+      scene.add(cube);
+
+      cube.position[2] = -10.0;
+      cube.position[0] += 2.0;
+
+      cube2.position[0] -= 2.0;
+      cube2.position[2] -= 10.0;
+
+      const render = () => {
         requestAnimationFrame(render);
 
         cube.rotation[0] += 0.01;
         cube.rotation[1] += 0.01;
 
-        renderer.render(scene, undefined);
+        cube2.rotation = cube.rotation;
+
+        renderer.render(scene, camera);
       }
 
       render();
