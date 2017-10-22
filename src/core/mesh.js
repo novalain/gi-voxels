@@ -1,53 +1,20 @@
 import Object from './object.js';
 import { vec3, mat3, mat4, quat } from 'gl-matrix';
 import { glContext } from '../renderer/renderer.js';
-import { createAndCompileProgram } from '../renderer/renderer_utils.js';
+//import Program from '../renderer/program.js';
 
 class Mesh extends Object {
-  constructor(geometry/*,material*/) {
+  constructor(geometry, material) {
     super();
 
-
-    // Init opengl buffers
     const gl = glContext();
-    this.buffers = this.initBuffers(gl, geometry);
-
-    // TODO: Material
-
-    const vsSource = `
-      attribute vec4 aVertexPosition;
-      //attribute vec4 aVertexColor;
-      uniform mat4 uModelViewMatrix;
-      uniform mat4 uProjectionMatrix;
-      //varying lowp vec4 vColor;
-      void main(void) {
-        gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-        //vColor = aVertexColor;
-      }
-    `;
-
-    const fsSource = `
-      //varying lowp vec4 vColor;
-      void main(void) {
-        gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
-      }
-    `;
-
-    const shaderProgram = createAndCompileProgram(gl, vsSource, fsSource);
-
-    this.programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-        vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-      },
-      uniformLocations: {
-        projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-        modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-      },
-    };
+    this._material = material;
+    this._buffers = this._initBuffers(geometry);
   }
 
-  initBuffers(gl, geometry) {
+  _initBuffers(geometry) {
+    const gl = glContext();
+
     // Positions
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -68,31 +35,26 @@ class Mesh extends Object {
 
   render(camera) {
     const gl = glContext();
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.position);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.position);
+    // Bind attributes
     gl.enableVertexAttribArray(
-        this.programInfo.attribLocations.vertexPosition);
+        this._material.programInfo.attribLocations.position);
     gl.vertexAttribPointer(
-        this.programInfo.attribLocations.vertexPosition,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-    );
+      this._material.programInfo.attribLocations.position,
+      3,
+      gl.FLOAT,
+      false,
+      0,
+      0
+    )
 
-    gl.useProgram(this.programInfo.program);
-    // Set uniforms
-    gl.uniformMatrix4fv(
-        this.programInfo.uniformLocations.projectionMatrix,
-        false,
-        camera.projectionMatrix);
-    gl.uniformMatrix4fv(
-        this.programInfo.uniformLocations.modelViewMatrix,
-        false,
-        this.modelMatrix);
-
+    // TODO: This is really expensive and dumb to do for every single object (if they share material)
+    this._material.activate();
+    this._material.setUniform("modelViewMatrix", this.modelMatrix);
+    this._material.setUniform("projectionMatrix", camera.projectionMatrix);
+    this._material.setInternalUniforms();
     gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+
   }
 }
 
