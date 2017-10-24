@@ -37,20 +37,20 @@
       scene.add(cube2);
       scene.add(cube);
 
-      cube.position[2] = -10.0;
+      //cube.position[1] = -2.0;
       cube.position[0] += 2.0;
-
       cube2.position[0] -= 2.0;
-      cube2.position[2] -= 10.0;
+      //cube2.position[1] -= 2.0;
+
+      const oc = new siick.OrbitControls(camera);
 
       const render = () => {
         requestAnimationFrame(render);
 
+        oc.update()
         cube.rotation[0] += 0.01;
         cube.rotation[1] += 0.01;
-
         cube2.rotation = cube.rotation;
-
         renderer.render(scene, camera);
       }
 
