@@ -50,7 +50,16 @@ class Mesh extends Object {
 
     // TODO: This is really expensive and dumb to do for every single object (if they share material)
     this._material.activate();
-    this._material.setUniform("modelViewMatrix", this.modelMatrix);
+
+    const viewMatrix = mat4.create();
+    const modelViewMatrix = mat4.create();
+    const invmodelViewMatrix = mat4.create();
+
+    mat4.lookAt(viewMatrix, camera.position, camera.target, camera.up);
+    mat4.multiply(modelViewMatrix, viewMatrix, this.modelMatrix);
+    //mat4.invert(invmodelViewMatrix, modelViewMatrix);
+
+    this._material.setUniform("modelViewMatrix", modelViewMatrix);
     this._material.setUniform("projectionMatrix", camera.projectionMatrix);
     this._material.setInternalUniforms();
     gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);

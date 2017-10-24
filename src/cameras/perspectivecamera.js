@@ -7,7 +7,7 @@ class PerspectiveCamera extends Object {
     console.assert(fov && ratio && near && far)
 
     super();
-    this.fov = fov * Math.PI / 180;
+    this.fov = fov * (Math.PI / 180);
     this.ratio = ratio;
     this.near = near;
     this.far = far;
@@ -15,6 +15,10 @@ class PerspectiveCamera extends Object {
     this.target = vec3.create();
     this.up = vec3.fromValues(0.0, 1.0, 0.0);
     this.projectionMatrix = mat4.create();
+
+    this.position[0] = 0;
+    this.position[1] = 0;
+    this.position[2] = 50;
   }
 
   lookAt(dir) {
