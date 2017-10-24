@@ -15,23 +15,22 @@ class BasicMaterial {
 
     this.uniforms = {};
 
-    const vsSource = `
-      attribute vec4 position;
-      //attribute vec4 aVertexColor;
+    const vsSource = `#version 300 es
+
+      in vec4 position;
       uniform mat4 modelViewMatrix;
       uniform mat4 projectionMatrix;
-      //varying lowp vec4 vColor;
       void main(void) {
         gl_Position = projectionMatrix * modelViewMatrix * position;
-        //vColor = aVertexColor;
       }
     `;
 
-    const fsSource = `
-      //varying lowp vec4 color;
+    const fsSource = `#version 300 es
       uniform lowp vec4 color;
+
+      out lowp vec4 outColor;
       void main(void) {
-        gl_FragColor = color;
+        outColor = color;
       }
     `;
 
@@ -40,7 +39,6 @@ class BasicMaterial {
     this.uniforms = {};
     this.program = createAndCompileProgram(gl, vsSource, fsSource);
     this.programInfo = {
-      // program: createAndCompileProgram(gl, vsSource, fsSource).
       attribLocations: {
         position: gl.getAttribLocation(this.program, 'position'),
       },
@@ -50,7 +48,6 @@ class BasicMaterial {
         modelViewMatrix: gl.getUniformLocation(this.program, 'modelViewMatrix'),
       },
     };
-    //this.program = new Program(params);
   }
 
   // TODO: Totally unnecessary branching..
