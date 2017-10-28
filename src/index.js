@@ -4,7 +4,8 @@ import Scene from './core/scene.js';
 import Mesh from './core/mesh.js';
 import PerspectiveCamera from './cameras/perspectivecamera.js';
 import BasicMaterial from './materials/basicmaterial.js';
-import OrbitControls from './cameras/orbitcontrols.js'
+import OrbitControls from './cameras/orbitcontrols.js';
+import DirectionalLight from './lights/directionallight.js';
 
 export {
   Renderer,
@@ -13,5 +14,6 @@ export {
   Scene,
   PerspectiveCamera,
   BasicMaterial,
-  OrbitControls
+  OrbitControls,
+  DirectionalLight
 };

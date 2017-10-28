@@ -34,8 +34,13 @@
       const cube = new siick.Mesh(geometry, material);
       const cube2 = new siick.Mesh(geometry, material);
 
+      const directionalLight = new siick.DirectionalLight();
+      directionalLight.position[0] += 2.0;
+      directionalLight.position[1] += 5.0;
+
       scene.add(cube2);
       scene.add(cube);
+      scene.addLight(directionalLight);
 
       //cube.position[1] = -2.0;
       cube.position[0] += 2.0;
