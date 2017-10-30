@@ -14,7 +14,6 @@
     <script src="/webpack-dev-server.js"></script>
     <script src="/dist/siick.js"></script>
     <script type="text/javascript">
-
       const canvas = document.createElement('canvas');
       canvas.style.display = 'block';
       canvas.style.boxSizing = 'border-box';
@@ -24,23 +23,31 @@
       canvas.style.height = window.innerHeight;
       document.body.appendChild(canvas);
 
-
       const scene = new siick.Scene();
       const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
       const renderer = new siick.Renderer(canvas);
-
       const geometry = new siick.Cube(0.5, 0.5, 0.5);
-      const material = new siick.BasicMaterial({ color : 'white' });
-      const cube = new siick.Mesh(geometry, material);
-      const cube2 = new siick.Mesh(geometry, material);
+      const basicMaterial = new siick.BasicMaterial({ color : 'white' });
 
-      const directionalLight = new siick.DirectionalLight();
-      directionalLight.position[0] += 2.0;
-      directionalLight.position[1] += 5.0;
+      const cube = new siick.Mesh(geometry, basicMaterial);
+      const cube2 = new siick.Mesh(geometry, basicMaterial);
+
+      const directionalLight = new siick.DirectionalLight(
+        {color: [1.0, 0.0, 0.0, 1.0], intensity: 0.5}
+      );
+      const directionalLight2 = new siick.DirectionalLight(
+        {color: [0.0, 1.0, 0.0, 1.0], intensity: 0.8}
+      );
+
+      //directionalLight.position[0] += 2.0;
+      directionalLight.position[1] -= 5.0;
+      //directionalLight2.position[0] += 2.0;
+      directionalLight2.position[1] += 5.0;
 
       scene.add(cube2);
       scene.add(cube);
       scene.addLight(directionalLight);
+      scene.addLight(directionalLight2);
 
       //cube.position[1] = -2.0;
       cube.position[0] += 2.0;

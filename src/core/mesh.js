@@ -1,5 +1,5 @@
 import Object from './object.js';
-import { vec3, mat3, mat4, quat } from 'gl-matrix';
+//import { vec3, mat3, mat4, quat } from 'gl-matrix';
 import { glContext } from '../renderer/renderer.js';
 //import Program from '../renderer/program.js';
 
@@ -13,6 +13,7 @@ class Mesh extends Object {
   }
 
   get material() { return this._material; }
+  //get modelMatrix() { return this.modelMatrix; }
 
   _initBuffers(geometry) {
     const gl = glContext();
@@ -40,8 +41,12 @@ class Mesh extends Object {
     };
   }
 
-  render(camera) {
+  render(camera, material) {
     const gl = glContext();
+
+    if (material) {
+      this._material = material;
+    }
 
     {
       gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.normals);
@@ -72,20 +77,26 @@ class Mesh extends Object {
       );
     }
 
-    const viewMatrix = mat4.create();
-    const modelViewMatrix = mat4.create();
-    const invmodelViewMatrix = mat4.create();
-    const normalMatrix = mat4.create();//transpose(inverse(modelView));
+    //const viewMatrix = mat4.create();
+    //const modelViewMatrix = mat4.create();
+    //const invmodelViewMatrix = mat4.create();
+    //const normalMatrix = mat4.create();//transpose(inverse(modelView));
 
-    mat4.lookAt(viewMatrix, camera.position, camera.target, camera.up);
-    mat4.multiply(modelViewMatrix, viewMatrix, this.modelMatrix);
-    mat4.invert(normalMatrix, modelViewMatrix);
-    mat4.transpose(normalMatrix, normalMatrix);
+    //mat4.lookAt(viewMatrix, camera.position, camera.target, camera.up);
+    //mat4.multiply(modelViewMatrix, viewMatrix, this.modelMatrix);
+    //mat4.invert(normalMatrix, modelViewMatrix);
+    //mat4.transpose(normalMatrix, normalMatrix);
 
-    this._material.setUniform("modelViewMatrix", modelViewMatrix);
-    this._material.setUniform("projectionMatrix", camera.projectionMatrix);
-    this._material.setUniform("normalMatrix", normalMatrix);
-    this._material.setInternalUniforms();
+    //this._material.setUniform("modelViewMatrix", modelViewMatrix);
+    //this._material.setUniform("projectionMatrix", camera.projectionMatrix);
+    //this._material.setUniform("normalMatrix", normalMatrix);
+
+    // this.perModel.bind();
+    // this.perModel.update([
+    //     ...modelViewMatrix,
+    //     ...normalMatrix,
+    //     ...projectionMatrix
+    // ]);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._buffers.indices);
     gl.drawElements(gl.TRIANGLES, this.vertexCount, gl.UNSIGNED_SHORT, 0);
