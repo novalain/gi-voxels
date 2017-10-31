@@ -74,7 +74,7 @@ class Renderer {
       const modelViewMatrix = mat4.create();
 
       mat4.multiply(modelViewMatrix, camera.viewMatrix, modelMatrix);
-      mat4.invert(normalMatrix, modelMatrix);
+      mat4.invert(normalMatrix, modelViewMatrix);
       mat4.transpose(normalMatrix, normalMatrix);
 
       this.perModel.update([

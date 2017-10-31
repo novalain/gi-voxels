@@ -10,6 +10,7 @@ class Mesh extends Object {
     const gl = glContext();
     this._material = material;
     this._buffers = this._initBuffers(geometry);
+    debugger;
   }
 
   get material() { return this._material; }
@@ -28,8 +29,6 @@ class Mesh extends Object {
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
 
-    // Indices
-
     let indexBuffer;
     if (geometry.indices && geometry.indices.length) {
       // Indices
@@ -47,12 +46,8 @@ class Mesh extends Object {
     };
   }
 
-  render(camera, material) {
+  render(camera) {
     const gl = glContext();
-
-    if (material) {
-      this._material = material;
-    }
 
     {
       gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.normals);
@@ -106,12 +101,11 @@ class Mesh extends Object {
 
     if (this._buffers.indices) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._buffers.indices);
-      gl.drawElements(gl.TRIANGLES, this.vertexCount, gl.UNSIGNED_SHORT, 0);
+      gl.drawElements(gl.TRIANGLES, this.vertexCount, gl.UNSIGNED_INT, 0);
     } else {
       gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.positions);
       gl.drawArrays(gl.TRIANGLES, 0, this.positionCount);
     }
-
   }
 }
 

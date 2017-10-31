@@ -14,6 +14,7 @@
   "author": "Michael Novén",
   "license": "MIT",
   "devDependencies": {
+    "obj-mtl-loader": "0.0.5",
     "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.8.2",

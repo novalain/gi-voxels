@@ -39,34 +39,52 @@
         {color: [0.0, 1.0, 0.0, 1.0], intensity: 0.8}
       );
 
-      //directionalLight.position[0] += 2.0;
+      directionalLight.position[0] += 2.0;
       directionalLight.position[1] -= 5.0;
-      //directionalLight2.position[0] += 2.0;
+      directionalLight2.position[0] += 2.0;
       directionalLight2.position[1] += 5.0;
 
-      scene.add(cube2);
-      scene.add(cube);
-      scene.addLight(directionalLight);
-      scene.addLight(directionalLight2);
+      const objLoader = new siick.ObjectLoader();
 
-      //cube.position[1] = -2.0;
-      cube.position[0] += 2.0;
-      cube2.position[0] -= 2.0;
-      //cube2.position[1] -= 2.0;
+      objLoader.load('data/suzanne.obj').then(res => {
+       // const geometry = {};
 
-      const oc = new siick.OrbitControls(camera);
 
-      const render = () => {
-        requestAnimationFrame(render);
 
-        oc.update()
-        cube.rotation[0] += 0.01;
-        cube.rotation[1] += 0.01;
-        cube2.rotation = cube.rotation;
-        renderer.render(scene, camera);
-      }
 
-      render();
+       // geometry.positions = res.positions;
+      //  geometry.normals = res.normals;
+       // geometry.indices = res.indices;
+
+        const suzanne = new siick.Mesh(res, basicMaterial);
+        scene.add(suzanne);
+        scene.add(cube2);
+        scene.add(cube);
+        scene.addLight(directionalLight);
+        scene.addLight(directionalLight2);
+
+        //cube.position[1] = -2.0;
+        cube.position[0] += 2.0;
+        cube2.position[0] -= 2.0;
+        //cube2.position[1] -= 2.0;
+
+        const oc = new siick.OrbitControls(camera);
+
+        const render = () => {
+          requestAnimationFrame(render);
+
+          oc.update();
+
+          suzanne.rotation[0] += 0.01;
+          suzanne.rotation[1] += 0.01;
+          cube.rotation[0] += 0.01;
+          cube.rotation[1] += 0.01;
+          cube2.rotation = cube.rotation;
+          renderer.render(scene, camera);
+        }
+
+        render();
+      });
     </script>
 
   </body>

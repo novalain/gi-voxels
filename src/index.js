@@ -7,8 +7,10 @@ import PerspectiveCamera from './cameras/perspectivecamera.js';
 import BasicMaterial from './materials/basicmaterial.js';
 import OrbitControls from './cameras/orbitcontrols.js';
 import DirectionalLight from './lights/directionallight.js';
+import ObjectLoader from './utils/objectloader.js';
 
 export {
+  ObjectLoader,
   Renderer,
   Cube,
   Sphere,
