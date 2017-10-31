@@ -14,17 +14,13 @@ class ObjectLoader {
           reject(err);
         }
 
-        console.log("RES",res)
-        // res.vertices.map(vertex => {
-        //   return vertex.splice(-1,1);
-        // });
-
         //const indices = [];
         const vertices = [];
         const normals = [];
         const resVertices = res.vertices;
         const resNormals = res.normals;
 
+        // TODO: Index buffer
         res.faces.forEach(face => {
           const v0 = resVertices[face.indices[0] - 1];
           const v1 = resVertices[face.indices[1] - 1];
@@ -57,20 +53,11 @@ class ObjectLoader {
           normals.push(n2[2]);
           normals.push(n2[2]);
           normals.push(n2[2]);
-          //vertices.push(resVertices[face.indices[1]]);
-          //vertices.push(resVertices[face.indices[2]]);
         });
-
-        //const numIndices = indices.map(Number);
 
         const resobject = {};
         resobject.positions = vertices;
         resobject.normals = normals;
-        //resobject.indices = numIndices;
-        // res.normals.map(normal => {
-        //   console.log(normal)
-        //   return normal;
-        // })
         resolve(resobject);
       });
     });

@@ -8,9 +8,16 @@
         margin: 0;
         background-color: #000;
       }
+
+      span.fps {
+        position:absolute;
+        padding:10px;
+        color:white;
+      }
     </style>
   </head>
   <body>
+    <span class="fps" ><span id = "fps_meter"></span> FPS</span>
     <script src="/webpack-dev-server.js"></script>
     <script src="/dist/siick.js"></script>
     <script type="text/javascript">
@@ -47,14 +54,10 @@
       const objLoader = new siick.ObjectLoader();
 
       objLoader.load('data/suzanne.obj').then(res => {
-       // const geometry = {};
-
-
-
-
-       // geometry.positions = res.positions;
-      //  geometry.normals = res.normals;
-       // geometry.indices = res.indices;
+        // const geometry = {};
+        // geometry.positions = res.positions;
+        // geometry.normals = res.normals;
+        // geometry.indices = res.indices;
 
         const suzanne = new siick.Mesh(res, basicMaterial);
         scene.add(suzanne);
@@ -70,8 +73,16 @@
 
         const oc = new siick.OrbitControls(camera);
 
-        const render = () => {
-          requestAnimationFrame(render);
+        const fpsMeter = document.getElementById("fps_meter");
+
+        let prev = 0;
+        const render = now => {
+          let delta = now - prev;
+          let fps = Math.round(1000 / delta);
+          prev = now;
+          console.log(fps);
+
+          fpsMeter.innerHTML = fps;
 
           oc.update();
 
@@ -81,6 +92,7 @@
           cube.rotation[1] += 0.01;
           cube2.rotation = cube.rotation;
           renderer.render(scene, camera);
+          requestAnimationFrame(render);
         }
 
         render();
