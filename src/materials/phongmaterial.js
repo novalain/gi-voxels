@@ -7,12 +7,7 @@ class PhongMaterial {
   constructor(props = {}) {
     console.assert(props.color);
 
-    if (props.color === 'white') {
-      this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    } else if (props.color === 'red') {
-      this.color = vec4.fromValues(1.0, 0.0, 0.0, 1.0);
-    }
-
+    this.color = props.color;
     this.uniforms = {};
 
     const vsSource = `#version 300 es
@@ -52,22 +47,30 @@ class PhongMaterial {
       };
 
       uniform int numLights;
+      uniform vec3 color;
+
+      const float ka = 0.5;
+      const float ia = 0.2;
 
       in vec3 vNormal;
 
       out vec4 outColor;
       void main(void) {
-        vec3 dcolor = vec3(0.0);
+
+        vec4 base = vec4(0.0, 0.0, 0.0, 1.0);
+        base += vec4(color, 1.0);
+        vec3 dAccumulator = vec3(0.0);
         for (int i = 0; i < numLights; ++i) {
           vec3 fromLight = normalize(vec3(directionalLights[i].position));
 
           vec3 light = vec3(max(dot(vNormal, fromLight), 0.0));
           vec3 directionalColor = directionalLights[i].color.xyz * light;
-          dcolor += mix(dcolor, directionalColor, directionalLights[i].intensity);
+          dAccumulator += mix(dAccumulator, vec3(directionalColor), directionalLights[i].intensity);
         }
 
-        dcolor /= float(numLights);
-        outColor = vec4(dcolor, 1.0);
+        dAccumulator /= float(numLights);
+        base.rgb *= (dAccumulator + ka*ia);
+        outColor = vec4(base.rgb, 1.0);
       }
     `;
 
@@ -122,7 +125,7 @@ class PhongMaterial {
 
   setInternalUniforms() {
     const gl = glContext();
-    gl.uniform4fv(this.programInfo.uniformLocations.color, this.color);
+    gl.uniform3fv(this.programInfo.uniformLocations.color, this.color);
   }
 
   activate() {
@@ -131,4 +134,4 @@ class PhongMaterial {
   }
 }
 
-export default BasicMaterial;
+export default PhongMaterial;

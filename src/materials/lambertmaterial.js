@@ -3,7 +3,7 @@ import { vec4 } from 'gl-matrix';
 import { createAndCompileProgram } from '../renderer/renderer_utils.js';
 
 // TODO: Create generic material class
-class PhongMaterial {
+class LambertMaterial {
   constructor(props = {}) {
     console.assert(props.color);
 
@@ -131,4 +131,4 @@ class PhongMaterial {
   }
 }
 
-export default BasicMaterial;
+export default LambertMaterial;

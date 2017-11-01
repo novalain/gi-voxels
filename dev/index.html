@@ -34,16 +34,16 @@
       const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
       const renderer = new siick.Renderer(canvas);
       const geometry = new siick.Cube(0.5, 0.5, 0.5);
-      const basicMaterial = new siick.BasicMaterial({ color : 'white' });
+      const phongMaterial = new siick.PhongMaterial({ color : [1.0, 0.0, 0.0] });
 
-      const cube = new siick.Mesh(geometry, basicMaterial);
-      const cube2 = new siick.Mesh(geometry, basicMaterial);
+      const cube = new siick.Mesh(geometry, phongMaterial);
+      const cube2 = new siick.Mesh(geometry, phongMaterial);
 
       const directionalLight = new siick.DirectionalLight(
-        {color: [1.0, 0.0, 0.0, 1.0], intensity: 0.5}
+        {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
       );
       const directionalLight2 = new siick.DirectionalLight(
-        {color: [0.0, 1.0, 0.0, 1.0], intensity: 0.8}
+        {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
       );
 
       directionalLight.position[0] += 2.0;
@@ -59,17 +59,15 @@
         // geometry.normals = res.normals;
         // geometry.indices = res.indices;
 
-        const suzanne = new siick.Mesh(res, basicMaterial);
+        const suzanne = new siick.Mesh(res, phongMaterial);
         scene.add(suzanne);
         scene.add(cube2);
         scene.add(cube);
         scene.addLight(directionalLight);
         scene.addLight(directionalLight2);
 
-        //cube.position[1] = -2.0;
         cube.position[0] += 2.0;
         cube2.position[0] -= 2.0;
-        //cube2.position[1] -= 2.0;
 
         const oc = new siick.OrbitControls(camera);
 
@@ -80,7 +78,6 @@
           let delta = now - prev;
           let fps = Math.round(1000 / delta);
           prev = now;
-          console.log(fps);
 
           fpsMeter.innerHTML = fps;
 
