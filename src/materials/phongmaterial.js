@@ -23,10 +23,20 @@ class PhongMaterial {
 
       in vec3 position;
       in vec3 normal;
+
+      out vec3 vPosition;
       out vec3 vNormal;
 
-      void main(void) {
-        vNormal = vec3(normalMatrix * vec4(normal, 1.0));
+      // out Data {
+      //   vec3 position;
+      //   vec3 normal;
+      // } data;
+
+      void main() {
+        vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
+       // vNormal = normal;
+        vPosition = vec3(viewMatrix * modelMatrix * vec4(position, 1.0));
+        // TODO texcoord
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
       }
     `;
@@ -49,28 +59,59 @@ class PhongMaterial {
       uniform int numLights;
       uniform vec3 color;
 
-      const float ka = 0.5;
-      const float ia = 0.2;
+      vec3 ka = vec3(0.0);
+      vec3 kd = vec3(0.64, 0.48, 0.32);
+      vec3 ks = vec3(0.5, 0.5, 0.5);
+      float shininess = 96.078431;
 
+      vec3 Ia = vec3(0.0);
+      vec3 Id = vec3(0.5);
+      vec3 Is = vec3(0.5);
+
+      in vec3 vPosition;
       in vec3 vNormal;
 
       out vec4 outColor;
-      void main(void) {
 
-        vec4 base = vec4(0.0, 0.0, 0.0, 1.0);
-        base += vec4(color, 1.0);
-        vec3 dAccumulator = vec3(0.0);
-        for (int i = 0; i < numLights; ++i) {
-          vec3 fromLight = normalize(vec3(directionalLights[i].position));
+      void light(int lightIndex, vec3 pos, vec3 norm, out vec3 ambient, out vec3 diffuse, out vec3 spec) {
+        vec3 n = normalize(norm);
+        vec3 s = normalize(directionalLights[lightIndex].position - pos);
+        vec3 v = normalize(-pos);
+        vec3 r = reflect(-s,n);
 
-          vec3 light = vec3(max(dot(vNormal, fromLight), 0.0));
-          vec3 directionalColor = directionalLights[i].color.xyz * light;
-          dAccumulator += mix(dAccumulator, vec3(directionalColor), directionalLights[i].intensity);
+        ambient = Ia * ka;
+        float sDotN = max(dot(s,n), 0.0);
+        diffuse = Id * kd * sDotN;
+
+        spec = Is * ks * pow(max(dot(r,v) , 0.0 ), shininess);
+      }
+
+
+      void main() {
+        vec3 ambientSum = vec3(0);
+        vec3 diffuseSum = vec3(0);
+        vec3 specSum = vec3(0);
+        vec3 ambient, diffuse, spec;
+
+        if (gl_FrontFacing) {
+          for (int i = 0; i < numLights; ++i) {
+            light(i, vPosition, vNormal, ambient, diffuse, spec);
+            ambientSum += ambient;
+            diffuseSum += diffuse;
+            specSum += spec;
+          }
+        } else {
+          for (int i = 0; i < numLights; ++i) {
+            light(i, vPosition, -vNormal, ambient, diffuse, spec);
+            ambientSum += ambient;
+            diffuseSum += diffuse;
+            specSum += spec;
+          }
         }
+        ambientSum /= float(numLights);
 
-        dAccumulator /= float(numLights);
-        base.rgb *= (dAccumulator + ka*ia);
-        outColor = vec4(base.rgb, 1.0);
+        //vec4 texColor = texture(Tex, data.TexCoord);
+        outColor = vec4(ambientSum + diffuseSum, 1.0) + vec4(specSum, 1.0);
       }
     `;
 

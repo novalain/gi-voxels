@@ -1,5 +1,5 @@
 import Scene from '../core/scene.js'
-import { vec3, mat3, mat4, quat } from 'gl-matrix';
+import { vec3, mat3, mat4, quat, vec4 } from 'gl-matrix';
 import UniformBufferObject from '../utils/ubo.js';
 
 // TODO: Remove global
@@ -38,10 +38,28 @@ class Renderer {
 
     // Lights
     for (let i = 0; i < scene.lights.length; i++) {
+
+      const pos = scene.lights[i].position;
+     // console.log(pos);
+
+      const lightPosVec4 = vec4.fromValues(pos[0], pos[1], pos[2], 1.0);
+
+
+      const lModelMatrix = scene.lights[i].modelMatrix;
+      const lModelView = mat4.create();
+      mat4.multiply(lModelView, camera.viewMatrix, lModelMatrix);
+
+      const out = vec4.create();
+      //console.log(lightPosVec4)
+
+      vec4.transformMat4(out, lightPosVec4, camera.viewMatrix);
+
+      //console.log(out);
+
       this.directional.update([
         ...scene.lights[i].color,
         ...[scene.lights[i].intensity, 0.0, 0.0, 0.0],
-        ...scene.lights[i].position,
+        ...out,
       ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
 
