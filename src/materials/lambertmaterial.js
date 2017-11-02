@@ -3,16 +3,11 @@ import { vec4 } from 'gl-matrix';
 import { createAndCompileProgram } from '../renderer/renderer_utils.js';
 
 // TODO: Create generic material class
-class LambertMaterial {
+class PhongMaterial {
   constructor(props = {}) {
     console.assert(props.color);
 
-    if (props.color === 'white') {
-      this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    } else if (props.color === 'red') {
-      this.color = vec4.fromValues(1.0, 0.0, 0.0, 1.0);
-    }
-
+    this.color = props.color;
     this.uniforms = {};
 
     const vsSource = `#version 300 es
@@ -28,10 +23,20 @@ class LambertMaterial {
 
       in vec3 position;
       in vec3 normal;
+
+      out vec3 vPosition;
       out vec3 vNormal;
 
-      void main(void) {
-        vNormal = vec3(normalMatrix * vec4(normal, 1.0));
+      // out Data {
+      //   vec3 position;
+      //   vec3 normal;
+      // } data;
+
+      void main() {
+        vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
+       // vNormal = normal;
+        vPosition = vec3(viewMatrix * modelMatrix * vec4(position, 1.0));
+        // TODO texcoord
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
       }
     `;
@@ -52,22 +57,51 @@ class LambertMaterial {
       };
 
       uniform int numLights;
+      uniform vec3 color;
 
+      vec3 ka = vec3(0.0);
+      vec3 kd = vec3(0.64, 0.48, 0.32);
+
+      vec3 Ia = vec3(0.0);
+      vec3 Id = vec3(0.5);
+
+      in vec3 vPosition;
       in vec3 vNormal;
 
       out vec4 outColor;
-      void main(void) {
-        vec3 dcolor = vec3(0.0);
-        for (int i = 0; i < numLights; ++i) {
-          vec3 fromLight = normalize(vec3(directionalLights[i].position));
 
-          vec3 light = vec3(max(dot(vNormal, fromLight), 0.0));
-          vec3 directionalColor = directionalLights[i].color.xyz * light;
-          dcolor += mix(dcolor, directionalColor, directionalLights[i].intensity);
+      void light(int lightIndex, vec3 pos, vec3 norm, out vec3 ambient, out vec3 diffuse) {
+        vec3 n = normalize(norm);
+        vec3 s = normalize(directionalLights[lightIndex].position - pos);
+
+        ambient = Ia * ka;
+        float sDotN = max(dot(s,n), 0.0);
+        diffuse = Id * kd * sDotN;
+      }
+
+
+      void main() {
+        vec3 ambientSum = vec3(0);
+        vec3 diffuseSum = vec3(0);
+        vec3 ambient, diffuse, spec;
+
+        if (gl_FrontFacing) {
+          for (int i = 0; i < numLights; ++i) {
+            light(i, vPosition, vNormal, ambient, diffuse);
+            ambientSum += ambient;
+            diffuseSum += diffuse;
+          }
+        } else {
+          for (int i = 0; i < numLights; ++i) {
+            light(i, vPosition, -vNormal, ambient, diffuse);
+            ambientSum += ambient;
+            diffuseSum += diffuse;
+          }
         }
+        ambientSum /= float(numLights);
 
-        dcolor /= float(numLights);
-        outColor = vec4(dcolor, 1.0);
+        //vec4 texColor = texture(Tex, data.TexCoord);
+        outColor = vec4(ambientSum + diffuseSum, 1.0);
       }
     `;
 
@@ -122,7 +156,7 @@ class LambertMaterial {
 
   setInternalUniforms() {
     const gl = glContext();
-    gl.uniform4fv(this.programInfo.uniformLocations.color, this.color);
+    gl.uniform3fv(this.programInfo.uniformLocations.color, this.color);
   }
 
   activate() {
@@ -131,4 +165,4 @@ class LambertMaterial {
   }
 }
 
-export default LambertMaterial;
+export default PhongMaterial;
