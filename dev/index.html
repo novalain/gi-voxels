@@ -34,7 +34,10 @@
       const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
       const renderer = new siick.Renderer(canvas);
       const geometry = new siick.Cube(0.5, 0.5, 0.5);
-      const phongMaterial = new siick.LambertMaterial({ color : [1.0, 1.0, 0.0] });
+      const phongMaterial = new siick.PhongMaterial({ color : [1.0, 0.0, 0.0] });
+
+      const cube = new siick.Mesh(geometry, phongMaterial);
+      const cube2 = new siick.Mesh(geometry, phongMaterial);
 
       const directionalLight = new siick.DirectionalLight(
         {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
@@ -43,31 +46,32 @@
         {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
       );
 
-      //directionalLight.position[0] += 2.0;
-     // directionalLight.position[0] = 0.0;
-      // directionalLight2.position[0] += 2.0;
-      directionalLight.position[1] = 100.0;
-      directionalLight.position[2] = 100.0;
-      const objLoader = new siick.ObjectLoader();
+      directionalLight.position[0] += 2.0;
+      directionalLight.position[1] -= 5.0;
+      directionalLight2.position[0] += 2.0;
+      directionalLight2.position[1] += 5.0;
 
-      objLoader.load('data/suzanne.obj').then(res => {
+      const objLoader = new siick.ObjectLoader();
+      const objectsToLoad = {
+        'suzanne': 'data/suzanne.obj'
+      };
+
+      objLoader.load(objectsToLoad).then(objectArray => {
         // const geometry = {};
         // geometry.positions = res.positions;
         // geometry.normals = res.normals;
         // geometry.indices = res.indices;
 
-        console.log("RES", res)
-
-        const suzanne = new siick.Mesh(res, phongMaterial);
+        console.log(objectArray)
+        const suzanne = new siick.Mesh(objectArray[0], phongMaterial);
         scene.add(suzanne);
-       // scene.add(cube2);
-        //scene.add(cube);
+        scene.add(cube2);
+        scene.add(cube);
         scene.addLight(directionalLight);
-        //scene.addLight(directionalLight2);
+        scene.addLight(directionalLight2);
 
-       // cube.position[0] += 2.0;
-        //cube2.position[0] -= 2.0;
-        //cube.position[1] += 2.0
+        cube.position[0] += 2.0;
+        cube2.position[0] -= 2.0;
 
         const oc = new siick.OrbitControls(camera);
 
@@ -83,11 +87,11 @@
 
           oc.update();
 
-          //suzanne.rotation[0] += 0.01;
+          suzanne.rotation[0] += 0.01;
           suzanne.rotation[1] += 0.01;
-          //cube.rotation[0] += 0.01;
-       //   cube.rotation[1] += 0.01;
-         // cube2.rotation = cube.rotation;
+          cube.rotation[0] += 0.01;
+          cube.rotation[1] += 0.01;
+          cube2.rotation = cube.rotation;
           renderer.render(scene, camera);
           requestAnimationFrame(render);
         }

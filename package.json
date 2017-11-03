@@ -5,7 +5,7 @@
   "main": "lib/siick-engine.js",
   "scripts": {
     "build": "webpack --env build",
-    "dev": "start http://localhost:8000/ & webpack-dev-server --env dev --progress --colors --watch"
+    "dev": "webpack-dev-server --env dev --progress --colors --watch --host 0.0.0.0 --open"
   },
   "keywords": [
     "webgl2",
@@ -15,7 +15,9 @@
   "license": "MIT",
   "devDependencies": {
     "obj-mtl-loader": "0.0.5",
+    "three-fly-controls": "^1.1.0",
     "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
+    "webgl-obj-loader": "^0.1.1",
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.8.2",
     "yargs": "^9.0.1"

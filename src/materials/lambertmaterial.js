@@ -8,7 +8,6 @@ class PhongMaterial {
     console.assert(props.color);
 
     this.color = props.color;
-    this.uniforms = {};
 
     const vsSource = `#version 300 es
       uniform perModel {
@@ -27,14 +26,8 @@ class PhongMaterial {
       out vec3 vPosition;
       out vec3 vNormal;
 
-      // out Data {
-      //   vec3 position;
-      //   vec3 normal;
-      // } data;
-
       void main() {
         vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
-       // vNormal = normal;
         vPosition = vec3(viewMatrix * modelMatrix * vec4(position, 1.0));
         // TODO texcoord
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
@@ -107,7 +100,6 @@ class PhongMaterial {
 
     const gl = glContext();
 
-    this.uniforms = {};
     this.program = createAndCompileProgram(gl, vsSource, fsSource);
     this.programInfo = {
       attribLocations: {
@@ -122,9 +114,6 @@ class PhongMaterial {
         normalMatrix: gl.getUniformLocation(this.program, 'normalMatrix')
       },
     };
-    // for (let i = 0; i < MAX_LIGHTS; ++i) {
-    //   this.programInfo.uniformLocations.dLightPositions.push(gl.getUniformLocation(this.program, "dLightPositions" + i + "));
-    // }
   }
 
   // TODO: Totally unnecessary branching..

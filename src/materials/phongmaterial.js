@@ -4,11 +4,7 @@ import { createAndCompileProgram } from '../renderer/renderer_utils.js';
 
 // TODO: Create generic material class
 class PhongMaterial {
-  constructor(props = {}) {
-    console.assert(props.color);
-
-    this.color = props.color;
-    this.uniforms = {};
+  constructor(params = {}) {
 
     const vsSource = `#version 300 es
       uniform perModel {
@@ -64,7 +60,7 @@ class PhongMaterial {
       vec3 ks = vec3(0.5, 0.5, 0.5);
       float shininess = 96.078431;
 
-      vec3 Ia = vec3(0.0);
+      vec3 Ia = vec3(0.3);
       vec3 Id = vec3(0.5);
       vec3 Is = vec3(0.5);
 
@@ -117,7 +113,10 @@ class PhongMaterial {
 
     const gl = glContext();
 
-    this.uniforms = {};
+    this.uniforms = {
+      'map' : params.map || null,
+      'color' : params.color || [1.0, 1.0, 1.0, 1.0]
+    };
     this.program = createAndCompileProgram(gl, vsSource, fsSource);
     this.programInfo = {
       attribLocations: {
@@ -126,10 +125,12 @@ class PhongMaterial {
       },
       uniformLocations: {
         numLights: gl.getUniformLocation(this.program, 'numLights'),
-        color: gl.getUniformLocation(this.program, 'color'),
         projectionMatrix: gl.getUniformLocation(this.program, 'projectionMatrix'),
         modelViewMatrix: gl.getUniformLocation(this.program, 'modelViewMatrix'),
-        normalMatrix: gl.getUniformLocation(this.program, 'normalMatrix')
+        normalMatrix: gl.getUniformLocation(this.program, 'normalMatrix'),
+        // Per material TODO make UBO
+        color: gl.getUniformLocation(this.program, 'color'),
+        map: gl.getUniformLocation(this.program, 'map')
       },
     };
     // for (let i = 0; i < MAX_LIGHTS; ++i) {
@@ -166,7 +167,7 @@ class PhongMaterial {
 
   setInternalUniforms() {
     const gl = glContext();
-    gl.uniform3fv(this.programInfo.uniformLocations.color, this.color);
+    gl.uniform3fv(this.programInfo.uniformLocations.color, this.uniforms.color);
   }
 
   activate() {
