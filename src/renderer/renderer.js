@@ -49,11 +49,17 @@ class Renderer {
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.indices), gl.STATIC_DRAW);
       }
 
+      // Texture buffer
+      const textureBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
+
       // Should probably hold all buffers here..
       mesh.buffers = {
         positions: positionBuffer,
         indices: indexBuffer,
-        normals: normalBuffer
+        normals: normalBuffer,
+        uvs: textureBuffer
       }
     });
   }
@@ -99,6 +105,23 @@ class Renderer {
     ]);
     material.setInternalUniforms();
 
+    // UV's
+    {
+      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.uvs);
+      // Bind attributes
+      gl.enableVertexAttribArray(
+          object.material.programInfo.attribLocations.uv);
+      gl.vertexAttribPointer(
+          object.material.programInfo.attribLocations.uv,
+          2,
+          gl.FLOAT,
+          false,
+          0,
+          0
+      );
+    }
+
+    // Normals
     {
       gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.normals);
       // Bind attributes
@@ -114,6 +137,7 @@ class Renderer {
       );
     }
 
+    // Positions
     {
       gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.positions);
       gl.enableVertexAttribArray(

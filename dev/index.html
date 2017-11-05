@@ -47,7 +47,6 @@
 
       Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
 
-        console.log("OK", textures)
         const scene = new siick.Scene();
         const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
         const renderer = new siick.Renderer(canvas);
@@ -57,7 +56,7 @@
         const phongMaterial = new siick.PhongMaterial(
           {
             color : [1.0, 0.0, 0.0],
-            map: textures.rock
+            map: textures[1].rock
           }
         );
 

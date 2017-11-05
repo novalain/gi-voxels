@@ -1,10 +1,19 @@
 import { glContext } from '../renderer/renderer.js';
 import { vec4 } from 'gl-matrix';
 import { createAndCompileProgram } from '../renderer/renderer_utils.js';
+import Texture from '../renderer/texture.js';
 
 // TODO: Create generic material class
 class PhongMaterial {
   constructor(params = {}) {
+    // We have a texture!
+    if (params.map) {
+      this._texture = new Texture();
+      this._texture.createTexture(params.map);
+      console.log("Created Texture!")
+    } else {
+      console.warn("Material must have a texture ATM!")
+    }
 
     const vsSource = `#version 300 es
       uniform perModel {
@@ -19,20 +28,16 @@ class PhongMaterial {
 
       in vec3 position;
       in vec3 normal;
+      in vec2 uv;
 
       out vec3 vPosition;
       out vec3 vNormal;
-
-      // out Data {
-      //   vec3 position;
-      //   vec3 normal;
-      // } data;
+      out vec2 vUv;
 
       void main() {
         vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
-       // vNormal = normal;
+        vUv = uv;
         vPosition = vec3(viewMatrix * modelMatrix * vec4(position, 1.0));
-        // TODO texcoord
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
       }
     `;
@@ -54,6 +59,7 @@ class PhongMaterial {
 
       uniform int numLights;
       uniform vec3 color;
+      uniform sampler2D textureMap;
 
       vec3 ka = vec3(0.0);
       vec3 kd = vec3(0.64, 0.48, 0.32);
@@ -66,6 +72,7 @@ class PhongMaterial {
 
       in vec3 vPosition;
       in vec3 vNormal;
+      in vec2 vUv;
 
       out vec4 outColor;
 
@@ -106,8 +113,8 @@ class PhongMaterial {
         }
         ambientSum /= float(numLights);
 
-        //vec4 texColor = texture(Tex, data.TexCoord);
-        outColor = vec4(ambientSum + diffuseSum, 1.0) + vec4(specSum, 1.0);
+        vec4 texColor = texture(textureMap, vUv);
+        outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
       }
     `;
 
@@ -121,7 +128,8 @@ class PhongMaterial {
     this.programInfo = {
       attribLocations: {
         position: gl.getAttribLocation(this.program, 'position'),
-        normal: gl.getAttribLocation(this.program, 'normal')
+        normal: gl.getAttribLocation(this.program, 'normal'),
+        uv: gl.getAttribLocation(this.program, 'uv')
       },
       uniformLocations: {
         numLights: gl.getUniformLocation(this.program, 'numLights'),
@@ -160,6 +168,8 @@ class PhongMaterial {
       case 'normalMatrix':
         gl.uniformMatrix4fv(this.programInfo.uniformLocations.normalMatrix, false, value);
       break;
+      case 'textureMap':
+        gl.uniform1i(this.programInfo.uniformLocations.textureMap, value);
       default:
         console.warn('Unknown Uniform');
     }
@@ -168,6 +178,12 @@ class PhongMaterial {
   setInternalUniforms() {
     const gl = glContext();
     gl.uniform3fv(this.programInfo.uniformLocations.color, this.uniforms.color);
+
+    //if (this._texture) {
+      gl.activeTexture(gl.TEXTURE0);
+      this._texture.bind();
+      gl.uniform1i(this.programInfo.uniformLocations.textureMap, 0);
+    //}
   }
 
   activate() {
