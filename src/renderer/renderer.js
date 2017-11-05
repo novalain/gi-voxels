@@ -7,6 +7,10 @@ let context;
 
 class Renderer {
   constructor(canvas) {
+    this._initialize();
+  }
+
+  _initialize() {
     this.ratio = global.devicePixelRatio;
     context = canvas.getContext('webgl2', {antialias: false});
 
@@ -21,8 +25,116 @@ class Renderer {
     this.directional = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
 
+  _initializeBuffers(scene) {
+    // Allocate buffers for scene
+    scene.objects.forEach(mesh => {
+      const geometry = mesh.geometry;
+      const gl = glContext();
+
+      // Position buffer
+      const positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.positions), gl.STATIC_DRAW);
+
+      // Normal buffer
+      const normalBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
+
+      // Index buffer
+      let indexBuffer;
+      if (geometry.indices && geometry.indices.length) {
+        indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.indices), gl.STATIC_DRAW);
+      }
+
+      // Should probably hold all buffers here..
+      mesh.buffers = {
+        positions: positionBuffer,
+        indices: indexBuffer,
+        normals: normalBuffer
+      }
+    });
+  }
+
+  postInitialize(scene) {
+    this._initializeBuffers(scene);
+  }
+
   setRatio(ratio) {
     this.ratio = ratio;
+  }
+
+  _renderObject(object) {
+    // For each light source upload position and other info here..
+    const material = object.material;
+    const program = material.program;
+
+    material.activate();
+    material.setUniform("numLights", scene.lights.length);
+
+    const gl = glContext();
+
+    const modelLocation = gl.getUniformBlockIndex(program, 'perModel');
+    const sceneLocation = gl.getUniformBlockIndex(program, 'perScene');
+    const directionalLocation = gl.getUniformBlockIndex(program, 'directional');
+
+    gl.uniformBlockBinding(program, sceneLocation, this.perScene.location);
+    gl.uniformBlockBinding(program, modelLocation, this.perModel.location);
+    gl.uniformBlockBinding(program, directionalLocation, this.directional.location);
+
+    // Calculate normal matrix
+    const modelMatrix = object.modelMatrix;
+    const normalMatrix = mat4.create();
+    const modelViewMatrix = mat4.create();
+
+    mat4.multiply(modelViewMatrix, camera.viewMatrix, modelMatrix);
+    mat4.invert(normalMatrix, modelViewMatrix);
+    mat4.transpose(normalMatrix, normalMatrix);
+
+    this.perModel.update([
+      ...modelMatrix,
+      ...normalMatrix
+    ]);
+    material.setInternalUniforms();
+
+    {
+      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.normals);
+      // Bind attributes
+      gl.enableVertexAttribArray(
+          object.material.programInfo.attribLocations.normal);
+      gl.vertexAttribPointer(
+          object.material.programInfo.attribLocations.normal,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+      );
+    }
+
+    {
+      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.positions);
+      gl.enableVertexAttribArray(
+          object.material.programInfo.attribLocations.position);
+      gl.vertexAttribPointer(
+          object.material.programInfo.attribLocations.position,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+      );
+    }
+
+    if (object.buffers.indices) {
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.buffers.indices);
+      gl.drawElements(gl.TRIANGLES, object.indexCount, gl.UNSIGNED_SHORT, 0);
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.positions);
+      gl.drawArrays(gl.TRIANGLES, 0, object.geometry.positions.length / 3.0);
+    }
   }
 
   _internalRender(scene, camera) {
@@ -30,7 +142,6 @@ class Renderer {
     this.directional.bind();
     this.perModel.bind();
 
-    // Per scene
     this.perScene.update([
       ...camera.viewMatrix,
       ...camera.projectionMatrix
@@ -40,22 +151,16 @@ class Renderer {
     for (let i = 0; i < scene.lights.length; i++) {
 
       const pos = scene.lights[i].position;
-     // console.log(pos);
 
       const lightPosVec4 = vec4.fromValues(pos[0], pos[1], pos[2], 1.0);
-
 
       const lModelMatrix = scene.lights[i].modelMatrix;
       const lModelView = mat4.create();
       mat4.multiply(lModelView, camera.viewMatrix, lModelMatrix);
 
       const out = vec4.create();
-      //console.log(lightPosVec4)
 
       vec4.transformMat4(out, lightPosVec4, camera.viewMatrix);
-
-      //console.log(out);
-
       this.directional.update([
         ...scene.lights[i].color,
         ...[scene.lights[i].intensity, 0.0, 0.0, 0.0],
@@ -67,41 +172,9 @@ class Renderer {
     //1. Front to back for opaque
     //2. Batch together materials
     //3. Back to front for transparent
-    const objects = scene.objects;
-    for (let i = 0; i < objects.length; ++i) {
-      // For each light source upload position and other info here..
-      const material = objects[i].material;
-      const program = material.program;
-
-      material.activate();
-      material.setUniform("numLights", scene.lights.length);
-
-      const gl = glContext();
-
-      const modelLocation = gl.getUniformBlockIndex(program, 'perModel');
-      const sceneLocation = gl.getUniformBlockIndex(program, 'perScene');
-      const directionalLocation = gl.getUniformBlockIndex(program, 'directional');
-
-      gl.uniformBlockBinding(program, sceneLocation, this.perScene.location);
-      gl.uniformBlockBinding(program, modelLocation, this.perModel.location);
-      gl.uniformBlockBinding(program, directionalLocation, this.directional.location);
-
-      // Calculate normal matrix
-      const modelMatrix = objects[i].modelMatrix;
-      const normalMatrix = mat4.create();
-      const modelViewMatrix = mat4.create();
-
-      mat4.multiply(modelViewMatrix, camera.viewMatrix, modelMatrix);
-      mat4.invert(normalMatrix, modelViewMatrix);
-      mat4.transpose(normalMatrix, normalMatrix);
-
-      this.perModel.update([
-        ...modelMatrix,
-        ...normalMatrix
-      ]);
-      material.setInternalUniforms();
-      objects[i].render(camera);
-    }
+    scene.objects.forEach(object => {
+      this._renderObject(object);
+    });
   }
 
   render(scene, camera) {
