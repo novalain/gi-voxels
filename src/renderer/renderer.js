@@ -66,7 +66,7 @@ class Renderer {
     this.ratio = ratio;
   }
 
-  _renderObject(object) {
+  _renderObject(object, scene, camera) {
     // For each light source upload position and other info here..
     const material = object.material;
     const program = material.program;
@@ -173,7 +173,7 @@ class Renderer {
     //2. Batch together materials
     //3. Back to front for transparent
     scene.objects.forEach(object => {
-      this._renderObject(object);
+      this._renderObject(object, scene, camera);
     });
   }
 

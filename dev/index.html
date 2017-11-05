@@ -30,50 +30,54 @@
       canvas.style.height = window.innerHeight;
       document.body.appendChild(canvas);
 
-      const scene = new siick.Scene();
-      const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
-      const renderer = new siick.Renderer(canvas);
-      const geometry = new siick.Cube(0.5, 0.5, 0.5);
-      const materials = [];
-
-      const phongMaterial = new siick.PhongMaterial(
-        {
-          color : [1.0, 0.0, 0.0],
-          map: 'data/rock.png'
-        }
-      );
-
-      materials.push(phongMaterial);
-
-      const cube = new siick.Mesh(geometry, phongMaterial);
-      const cube2 = new siick.Mesh(geometry, phongMaterial);
-
-      const directionalLight = new siick.DirectionalLight(
-        {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
-      );
-      const directionalLight2 = new siick.DirectionalLight(
-        {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
-      );
-
-      directionalLight.position[0] += 2.0;
-      directionalLight.position[1] -= 5.0;
-      directionalLight2.position[0] += 2.0;
-      directionalLight2.position[1] += 5.0;
-
-      const objLoader = new siick.ObjectLoader();
       const objectsToLoad = {
         'suzanne': 'data/suzanne.obj'
       };
 
+      const texturesToLoad = {
+        'rock2': 'data/rock2.png',
+        'rock' : 'data/rock.png'
+      };
 
-      // Load Obj's
-      objLoader.load(objectsToLoad).then(objectArray => {
-        // const geometry = {};
-        // geometry.positions = res.positions;
-        // geometry.normals = res.normals;
-        // geometry.indices = res.indices;
+      const objLoader = new siick.ObjectLoader();
+      const resourceLoader = new siick.ResourceLoader();
 
-        console.log(objectArray)
+      const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
+      const loadObjectsPromise = objLoader.load(objectsToLoad);
+
+      Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
+
+        console.log("OK", textures)
+        const scene = new siick.Scene();
+        const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
+        const renderer = new siick.Renderer(canvas);
+        const geometry = new siick.Cube(0.5, 0.5, 0.5);
+        const materials = [];
+
+        const phongMaterial = new siick.PhongMaterial(
+          {
+            color : [1.0, 0.0, 0.0],
+            map: textures.rock
+          }
+        );
+
+        materials.push(phongMaterial);
+
+        const cube = new siick.Mesh(geometry, phongMaterial);
+        const cube2 = new siick.Mesh(geometry, phongMaterial);
+
+        const directionalLight = new siick.DirectionalLight(
+          {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
+        );
+        const directionalLight2 = new siick.DirectionalLight(
+          {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
+        );
+
+        directionalLight.position[0] += 2.0;
+        directionalLight.position[1] -= 5.0;
+        directionalLight2.position[0] += 2.0;
+        directionalLight2.position[1] += 5.0;
+
         const suzanne = new siick.Mesh(objectArray[0], phongMaterial);
         scene.add(suzanne);
         scene.add(cube2);
@@ -109,7 +113,12 @@
         }
 
         render();
+
+
       });
+
+
+
     </script>
 
   </body>

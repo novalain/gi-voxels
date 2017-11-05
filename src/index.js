@@ -9,6 +9,7 @@ import LambertMaterial from './materials/lambertmaterial.js';
 import OrbitControls from './cameras/orbitcontrols.js';
 import DirectionalLight from './lights/directionallight.js';
 import ObjectLoader from './utils/objectloader.js';
+import ResourceLoader from './utils/resourceloader.js';
 
 export {
   PhongMaterial,
@@ -22,5 +23,6 @@ export {
   PerspectiveCamera,
   BasicMaterial,
   OrbitControls,
-  DirectionalLight
+  DirectionalLight,
+  ResourceLoader
 };
