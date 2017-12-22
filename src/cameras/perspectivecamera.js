@@ -19,19 +19,22 @@ class PerspectiveCamera extends Object {
 
     this.position[0] = 0;
     this.position[1] = 0;
-    this.position[2] = 10;
+    this.position[2] = 0;
   }
 
   //get projectionMatrix() { return this.projectionMatrix; }
   //get viewMatrix() { return this.viewMatrix; }
 
-  lookAt(dir) {
-    vec3.copy(this.target, v);
+  setTarget(dir) {
+    vec3.copy(this.target, dir);
+  }
+
+  lookAt() {
+    mat4.lookAt(this.viewMatrix, this.position, this.target, this.up);
   }
 
   update() {
     const gl = glContext();
-    mat4.lookAt(this.viewMatrix, this.position, this.target, this.up);
     mat4.perspective(
       this.projectionMatrix,
       this.fov,

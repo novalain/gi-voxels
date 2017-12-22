@@ -104,6 +104,7 @@ class OrbitControls {
     const x = Math.sin(this.ry) * r;
     const z = Math.cos(this.ry) * r;
     vec3.set(this.camera.position, x, y, z);
+    this.camera.lookAt();
   }
 
 }

@@ -31,6 +31,7 @@
       document.body.appendChild(canvas);
 
       const objectsToLoad = {
+        //'suzanne': 'data/dabrovic/sponza.obj'
         'suzanne': 'data/suzanne.obj'
       };
 
@@ -47,6 +48,7 @@
 
       Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
 
+        console.info("Finished!");
         const scene = new siick.Scene();
         const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
         const renderer = new siick.Renderer(canvas);
@@ -68,41 +70,38 @@
         const directionalLight = new siick.DirectionalLight(
           {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
         );
-        const directionalLight2 = new siick.DirectionalLight(
-          {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
-        );
 
         directionalLight.position[0] += 2.0;
-        directionalLight.position[1] -= 5.0;
-        directionalLight2.position[0] += 2.0;
-        directionalLight2.position[1] += 5.0;
+        directionalLight.position[1] += 5.0;
 
         const suzanne = new siick.Mesh(objectArray[0], phongMaterial);
         scene.add(suzanne);
         scene.add(cube2);
         scene.add(cube);
         scene.addLight(directionalLight);
-        scene.addLight(directionalLight2);
 
         renderer.postInitialize(scene);
 
         cube.position[0] += 2.0;
         cube2.position[0] -= 2.0;
 
-        const oc = new siick.OrbitControls(camera);
+        const oc = new siick.FlyControls(camera);
+       // const ob = new siick.OrbitControls(camera);
         const fpsMeter = document.getElementById("fps_meter");
 
         let prev = 0;
+
         const render = now => {
           let delta = now - prev;
           let fps = Math.round(1000 / delta);
           prev = now;
 
           fpsMeter.innerHTML = fps;
-          oc.update();
 
-          suzanne.rotation[0] += 0.01;
-          suzanne.rotation[1] += 0.01;
+          oc.update(0.1);
+
+          //suzanne.rotation[0] += 0.01;
+          //suzanne.rotation[1] += 0.01;
           cube.rotation[0] += 0.01;
           cube.rotation[1] += 0.01;
           cube2.rotation = cube.rotation;
@@ -110,14 +109,8 @@
           renderer.render(scene, camera);
           requestAnimationFrame(render);
         }
-
         render();
-
-
       });
-
-
-
     </script>
 
   </body>

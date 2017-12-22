@@ -7,6 +7,7 @@ import PerspectiveCamera from './cameras/perspectivecamera.js';
 import PhongMaterial from './materials/phongmaterial.js';
 import LambertMaterial from './materials/lambertmaterial.js';
 import OrbitControls from './cameras/orbitcontrols.js';
+import FlyControls from './cameras/flycontrols.js';
 import DirectionalLight from './lights/directionallight.js';
 import ObjectLoader from './utils/objectloader.js';
 import ResourceLoader from './utils/resourceloader.js';
@@ -23,6 +24,7 @@ export {
   PerspectiveCamera,
   BasicMaterial,
   OrbitControls,
+  FlyControls,
   DirectionalLight,
   ResourceLoader
 };
