@@ -10,7 +10,7 @@ const FlyControls = function (camera, domElement = undefined) {
 
   // API
   this.movementSpeed = 1.5;
-  this.rollSpeed = 0.07;
+  this.rollSpeed = 0.12;
 
   this.dragToLook = true;
   this.autoForward = false;
@@ -138,8 +138,8 @@ const FlyControls = function (camera, domElement = undefined) {
     const rotMult = 1.0 * delta * this.rollSpeed;
 
     const viewMatrix = this.camera.viewMatrix;
+    
     const strafe = vec3.create();
-
     strafe[0] = viewMatrix[0];
     strafe[1] = viewMatrix[4];
     strafe[2] = viewMatrix[8];
@@ -149,13 +149,19 @@ const FlyControls = function (camera, domElement = undefined) {
     forward[1] = viewMatrix[6];
     forward[2] = viewMatrix[10];
 
+    const up  = vec3.create();
+    up[0] = viewMatrix[1];
+    up[1] = viewMatrix[5];
+    up[2] = viewMatrix[11];
+
     const dz = -this.moveVector[2];
+    const dy = this.moveVector[1];
     const dx = this.moveVector[0];
 
     // TODO: Remove element-wise
-    this.camera.position[0] += (-dz * forward[0] + dx * strafe[0]) * moveMult;
-    this.camera.position[1] += (-dz * forward[1] + dx * strafe[1]) * moveMult;
-    this.camera.position[2] += (-dz * forward[2] + dx * strafe[2]) * moveMult;
+    this.camera.position[0] += (-dz * forward[0] + dy * up[0] + dx * strafe[0]) * moveMult;
+    this.camera.position[1] += (-dz * forward[1] + dy * up[1] + dx * strafe[1]) * moveMult;
+    this.camera.position[2] += (-dz * forward[2] + dy * up[2] + dx * strafe[2]) * moveMult;
 
     // ACCUMULATE ROTATIONS
     this.camera.rotation[0] += this.rotationVector[0] * rotMult;
