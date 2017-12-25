@@ -1,0 +1,143 @@
+<html>
+
+<head>
+    <title>Hello World</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        html,
+        body {
+            margin: 0;
+            background-color: #000;
+        }
+
+        span.fps {
+            position: absolute;
+            padding: 10px;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <span class="fps">
+        <span id="fps_meter"></span> FPS</span>
+    <!-- <script src="/webpack-dev-server.js"></script> -->
+    <script src="siick.min.js"></script>
+    <script type="text/javascript">
+        const canvas = document.createElement('canvas');
+        canvas.style.display = 'block';
+        canvas.style.boxSizing = 'border-box';
+        canvas.width = window.innerWidth * window.devicePixelRatio;
+        canvas.height = window.innerHeight * window.devicePixelRatio;
+        canvas.style.width = window.innerWidth;
+        canvas.style.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        //  const objectsToLoad = {
+        //     //'suzanne': 'data/dabrovic/sponza.obj'
+        //     'suzanne': 'data/suzanne.obj'
+        //   };
+
+
+        const objectsToLoad = [
+            {
+                name: 'suzanne',
+                obj: 'data/suzannefromex/suzanne.obj',
+                mtl: true
+            },
+            // {
+            //   name: 'suzanne2',
+            //   obj: 'data/suzanne.obj'
+            // }
+            // {'suzanne': 'data/suzanne.obj'}
+        ];
+
+        // const objectMaterialsToLoad = {
+        //   'suzanne': ['data/suzanne.obj', 'data/suzanne.mtl']
+        // }
+
+        const texturesToLoad = {
+            'rock2': 'data/rock2.png',
+            'rock': 'data/rock.png'
+        };
+
+        const objLoader = new siick.ObjectLoader();
+        const resourceLoader = new siick.ResourceLoader();
+        const materialLoader = new siick.MaterialLoader();
+
+        //materialLoader.load(objectMaterialsToLoad);
+        const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
+        const loadObjectsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
+
+        Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
+
+            console.log("Suzanne raw data! (missing texcoords - hardcoded)", objectArray[0]);
+
+            const scene = new siick.Scene();
+            const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
+            const renderer = new siick.Renderer(canvas);
+            const geometry = new siick.Cube(0.5, 0.5, 0.5);
+            const materials = [];
+
+            const phongMaterial = new siick.PhongMaterial(
+                {
+                    color: [1.0, 0.0, 0.0],
+                    map: textures[1].rock
+                }
+            );
+
+            materials.push(phongMaterial);
+
+            const cube = new siick.Mesh(geometry, phongMaterial);
+            const cube2 = new siick.Mesh(geometry, phongMaterial);
+
+            const directionalLight = new siick.DirectionalLight(
+                { color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5 }
+            );
+
+            directionalLight.position[0] += 2.0;
+            directionalLight.position[1] += 5.0;
+
+            const suzanne = new siick.Mesh(objectArray[0], phongMaterial);
+            scene.add(suzanne);
+            scene.add(cube2);
+            scene.add(cube);
+            scene.addLight(directionalLight);
+
+            renderer.postInitialize(scene);
+
+            cube.position[0] += 2.0;
+            cube2.position[0] -= 2.0;
+
+            const oc = new siick.FlyControls(camera);
+            // const ob = new siick.OrbitControls(camera);
+            const fpsMeter = document.getElementById("fps_meter");
+
+            let prev = 0;
+
+            const render = now => {
+                let delta = now - prev;
+                let fps = Math.round(1000 / delta);
+                prev = now;
+
+                fpsMeter.innerHTML = fps;
+
+                oc.update(0.1);
+
+                //suzanne.rotation[0] += 0.01;
+                //suzanne.rotation[1] += 0.01;
+                cube.rotation[0] += 0.01;
+                cube.rotation[1] += 0.01;
+                cube2.rotation = cube.rotation;
+
+                renderer.render(scene, camera);
+                requestAnimationFrame(render);
+            }
+            render();
+        });
+    </script>
+
+</body>
+
+</html>
