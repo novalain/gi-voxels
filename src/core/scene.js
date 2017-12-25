@@ -23,7 +23,7 @@ class Scene {
     for (let i = 0; i < this.objects.length; ++i) {
       this.objects[i].update();
     }
-    camera.update();
+    //camera.update();
   }
 }
 

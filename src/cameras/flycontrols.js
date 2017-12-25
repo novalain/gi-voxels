@@ -9,8 +9,8 @@ const FlyControls = function (camera, domElement = undefined) {
   this.domElement = gl.canvas;
 
   // API
-  this.movementSpeed = 2.0;
-  this.rollSpeed = 0.15;
+  this.movementSpeed = 1.5;
+  this.rollSpeed = 0.07;
 
   this.dragToLook = true;
   this.autoForward = false;
@@ -20,6 +20,8 @@ const FlyControls = function (camera, domElement = undefined) {
   this.moveState = { up: 0, down: 0, left: 0, right: 0, forward: 0, back: 0, pitchUp: 0, pitchDown: 0, yawLeft: 0, yawRight: 0, rollLeft: 0, rollRight: 0 };
   this.moveVector = vec3.create();
   this.rotationVector = vec3.create();
+
+  this.isDirty = false;
 
   this.keydown = function (event) {
     if (event.altKey) {
@@ -92,6 +94,7 @@ const FlyControls = function (camera, domElement = undefined) {
         case 2: this.moveState.back = 1; break;
       }
       this.updateMovementVector();
+      //this.updateViewMatrix();
     }
   };
 
@@ -100,7 +103,6 @@ const FlyControls = function (camera, domElement = undefined) {
       //get the change from last position to this position
       //this.deltaX = this.last_position.x - event.clientX;
       //this.deltaY = this.last_position.y - event.clientY;
-
       var container = this.getContainerDimensions();
       var halfWidth = container.size[0] / 2;
       var halfHeight = container.size[1] / 2;
@@ -109,6 +111,7 @@ const FlyControls = function (camera, domElement = undefined) {
       this.moveState.pitchDown = ((event.pageY - container.offset[1]) - halfHeight) / halfHeight;
 
       this.updateRotationVector();
+      //this.updateViewMatrix();
     }
   };
 
@@ -124,17 +127,19 @@ const FlyControls = function (camera, domElement = undefined) {
         case 2: this.moveState.back = 0; break;
       }
       this.updateMovementVector();
+      //this.updateViewMatrix();
     }
     this.updateRotationVector();
+    //this.updateViewMatrix();
   };
 
-  this.update = function (delta) {
+  this.update = function (delta = 0.9) {
     const moveMult = delta * this.movementSpeed;
-    const rotMult = delta * this.rollSpeed;
+    const rotMult = 1.0 * delta * this.rollSpeed;
 
     const viewMatrix = this.camera.viewMatrix;
-  
     const strafe = vec3.create();
+
     strafe[0] = viewMatrix[0];
     strafe[1] = viewMatrix[4];
     strafe[2] = viewMatrix[8];
@@ -143,30 +148,41 @@ const FlyControls = function (camera, domElement = undefined) {
     forward[0] = viewMatrix[2];
     forward[1] = viewMatrix[6];
     forward[2] = viewMatrix[10];
-  
+
     const dz = -this.moveVector[2];
     const dx = this.moveVector[0];
-    
+
     // TODO: Remove element-wise
     this.camera.position[0] += (-dz * forward[0] + dx * strafe[0]) * moveMult;
     this.camera.position[1] += (-dz * forward[1] + dx * strafe[1]) * moveMult;
     this.camera.position[2] += (-dz * forward[2] + dx * strafe[2]) * moveMult;
 
-    const tmpQuaternion = quat.fromValues(this.rotationVector[0] * rotMult, this.rotationVector[1] * rotMult, this.rotationVector[2] * rotMult, 1);
-    quat.multiply(this.camera.quaternion, tmpQuaternion, this.camera.quaternion);
-    quat.normalize(this.camera.quaternion, this.camera.quaternion);
+    // ACCUMULATE ROTATIONS
+    this.camera.rotation[0] += this.rotationVector[0] * rotMult;
+    this.camera.rotation[1] += this.rotationVector[1] * rotMult;
+    this.camera.rotation[2] += -this.rotationVector[2] * rotMult;
 
-    const rotationMatrix = mat4.create();
-    mat4.fromQuat(rotationMatrix, this.camera.quaternion);
-  
+    // OK BUT TILTS
+    //const tmpQuaternion = quat.fromValues(this.rotationVector[0] * rotMult, this.rotationVector[1] * rotMult, 0, 1);
+    //quat.identity(this.camera.quaternion);
+    //quat.multiply(this.camera.quaternion, tmpQuaternion, this.camera.quaternion);
+    //const rotationMatrix = mat4.create();
+    //mat4.fromQuat(rotationMatrix, this.camera.quaternion);
+
+    quat.identity(this.camera.quaternion);
+    quat.rotateX(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[0]);
+    quat.rotateY(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[1]);
+    quat.rotateZ(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[2]);
+
+    const axisAngle = quat.getAxisAngle(this.camera.quaternionAxisAngle, this.camera.quaternion);
+    
+    mat4.identity(this.camera.viewMatrix);
     const negatedVec = vec3.create();
     vec3.negate(negatedVec, this.camera.position);
   
     const translationMatrix = mat4.create();
-    mat4.translate(translationMatrix, translationMatrix, negatedVec);
-
-    const result = mat4.create();
-    mat4.multiply(this.camera.viewMatrix, rotationMatrix, translationMatrix);
+    mat4.rotate(this.camera.viewMatrix, this.camera.viewMatrix, axisAngle, this.camera.quaternionAxisAngle);
+    mat4.translate(this.camera.viewMatrix, this.camera.viewMatrix, negatedVec);
   };
 
   this.updateMovementVector = function () {
@@ -180,6 +196,7 @@ const FlyControls = function (camera, domElement = undefined) {
     this.rotationVector[0] = (this.moveState.pitchDown - this.moveState.pitchUp);
     this.rotationVector[1] = (this.moveState.yawRight - this.moveState.yawLeft);
     this.rotationVector[2] = (this.moveState.rollRight - this.moveState.rollLeft);
+    this.isDirty = true;
   };
 
   this.getContainerDimensions = function () {
