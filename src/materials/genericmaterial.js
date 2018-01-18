@@ -2,6 +2,7 @@ import { glContext } from '../renderer/renderer.js';
 import { vec4 } from 'gl-matrix';
 import { createAndCompileProgram } from '../renderer/renderer_utils.js';
 import Texture from '../renderer/texture.js';
+import texture from '../renderer/texture.js';
 
 // TODO: Create generic material class
 class GenericMaterial {
@@ -14,6 +15,9 @@ class GenericMaterial {
     // } else {
     //     console.warn("Material must have a texture ATM!")
     // }
+    const textureData = params[0].mapDiffuse.texture;
+    this._texture = new Texture();
+    this._texture.createTexture(textureData);
     this.materialData = params; 
   
     const vsSource = `#version 300 es
@@ -30,12 +34,12 @@ class GenericMaterial {
         mat4 projectionMatrix;
       };
 
-      in int materialId;
+      in uint materialId;
       in vec3 position;
       in vec3 normal;
       in vec2 uv;
 
-      flat out int vMaterial;
+      flat out uint vMaterial;
       out vec3 vPosition;
       out vec3 vNormal;
       out vec2 vUv;
@@ -76,7 +80,7 @@ class GenericMaterial {
 
       uniform int numLights;
       uniform vec3 color;
-      //uniform sampler2D textureMap;
+      uniform sampler2D textureMap;
 
       vec3 ka = vec3(0.8);
       vec3 kd = vec3(0.64, 0.48, 0.32);
@@ -90,7 +94,7 @@ class GenericMaterial {
       in vec3 vPosition;
       in vec3 vNormal;
       in vec2 vUv;
-      flat in int vMaterial;
+      flat in uint vMaterial;
 
       out vec4 outColor;
 
@@ -108,32 +112,32 @@ class GenericMaterial {
       }
 
       void main() {
-        // vec3 ambientSum = vec3(0);
-        // vec3 diffuseSum = vec3(0);
-        // vec3 specSum = vec3(0);
-        // vec3 ambient, diffuse, spec;
+        vec3 ambientSum = vec3(0);
+        vec3 diffuseSum = vec3(0);
+        vec3 specSum = vec3(0);
+        vec3 ambient, diffuse, spec;
 
-        // if (gl_FrontFacing) {
-        //   for (int i = 0; i < numLights; ++i) {
-        //     light(i, vPosition, vNormal, ambient, diffuse, spec);
-        //     ambientSum += ambient;
-        //     diffuseSum += diffuse;
-        //     specSum += spec;
-        //   }
-        // } else {
-        //   for (int i = 0; i < numLights; ++i) {
-        //     light(i, vPosition, -vNormal, ambient, diffuse, spec);
-        //     ambientSum += ambient;
-        //     diffuseSum += diffuse;
-        //     specSum += spec;
-        //   }
-        // }
-        // ambientSum /= float(numLights);
+        if (gl_FrontFacing) {
+          for (int i = 0; i < numLights; ++i) {
+            light(i, vPosition, vNormal, ambient, diffuse, spec);
+            ambientSum += ambient;
+            diffuseSum += diffuse;
+            specSum += spec;
+          }
+        } else {
+          for (int i = 0; i < numLights; ++i) {
+            light(i, vPosition, -vNormal, ambient, diffuse, spec);
+            ambientSum += ambient;
+            diffuseSum += diffuse;
+            specSum += spec;
+          }
+        }
+        ambientSum /= float(numLights);
 
-        // vec4 texColor = texture(textureMap, vUv);
-        // outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
-        vec3 a = materials[vMaterial].ambient;
-        outColor = vec4(a, 1.0);
+        vec4 texColor = texture(textureMap, vUv);
+        outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
+       // vec3 a = materials[vMaterial].ambient;
+        //outColor = vec4(a, 1.0);
       }
     `;
 
@@ -143,7 +147,7 @@ class GenericMaterial {
         this.programInfo = {
             attribLocations: {
                 position: gl.getAttribLocation(this.program, 'position'),
-                material: gl.getAttribLocation(this.program, 'materialId'),
+                materialId: gl.getAttribLocation(this.program, 'materialId'),
                 normal: gl.getAttribLocation(this.program, 'normal'),
                 uv: gl.getAttribLocation(this.program, 'uv')
             },

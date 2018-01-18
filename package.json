@@ -5,7 +5,7 @@
   "main": "lib/siick-engine.js",
   "scripts": {
     "build": "webpack --env build",
-    "dev": "webpack-dev-server --env dev --progress --colors --watch --host 0.0.0.0 --open"
+    "dev" : "start http://localhost:8000/ & webpack-dev-server --env dev --progress --colors --watch"
   },
   "keywords": [
     "webgl2",

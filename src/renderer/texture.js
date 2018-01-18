@@ -16,12 +16,16 @@ class Texture {
 		this._border = 0;
 		this._format = gl.RGBA;
 		this._dataType = gl.UNSIGNED_BYTE;
-		this._data = image.data;
-
+		this._data = image;
 	 	this.bind();
 		gl.texImage2D(gl.TEXTURE_2D, this._level, this._internalFormat,
 		          this._width, this._height, this._border, this._format, this._dataType,
 		          this._data);
+
+		
+		if (!this._width || this._width % 2 !== 0 || !this._height || !this._height % 2 !== 0 ) {
+			console.warn("WEIRD WIDTH OR HEIGHT")
+		}
 
 		if (Texture.isPowerOf2(this._width) && Texture.isPowerOf2(this._height)) {
 		// Yes, it's a power of 2. Generate mips.

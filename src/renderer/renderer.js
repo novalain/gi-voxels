@@ -72,12 +72,11 @@ class Renderer {
       if (geometry.vertexMaterialIndices) {
         materialBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, materialBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Int32Array(geometry.vertexMaterialIndices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Uint16Array(geometry.vertexMaterialIndices), gl.STATIC_DRAW);
       }
 
       // Update materials
       const materialData = mesh.material.materialData;
-      console.log("mat data", materialData)
       for (let i = 0; i < materialData.length; ++i) {
         const m = materialData[i];
         this.material.update([
@@ -111,9 +110,17 @@ class Renderer {
 
     material.activate();
     material.setUniform("numLights", scene.lights.length);
-    //material.setUniform("hasMaterial", false);
 
     const gl = glContext();
+
+    // TODO Bind all textures
+    //for (let i = 0; i < materialData.length; ++i) {
+      gl.activeTexture(gl.TEXTURE0);
+      material._texture.bind();
+      gl.uniform1i(material.programInfo.uniformLocations.textureMap, 0);
+    //}
+    //material.setUniform("hasMaterial", false);
+
    
     const materialLocation = gl.getUniformBlockIndex(program, 'materialBuffer');
     const modelLocation = gl.getUniformBlockIndex(program, 'modelMatrices');
@@ -190,6 +197,7 @@ class Renderer {
     // Materials
     if (object.buffers.materialIds) {
       {
+      
         gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.materialIds);
         gl.enableVertexAttribArray(
           object.material.programInfo.attribLocations.materialId);
