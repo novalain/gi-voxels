@@ -14,14 +14,23 @@ class Renderer {
     this.ratio = global.devicePixelRatio;
     context = canvas.getContext('webgl2', {antialias: false});
 
-    this.perModel = new UniformBufferObject([
+    // This is not true for all programs ...
+    // On the other hand might only have one program in the end that I
+    // just pass materialdata to (when setting a custom material such as phong). 
+    this.material = new UniformBufferObject(new Float32Array(Renderer.MAX_MATERIALS * 16));    
+    
+    // True for all programs
+    this.modelMatrices = new UniformBufferObject([
         ...mat4.create(), // model
         ...mat4.create(), // normal
     ]);
-    this.perScene = new UniformBufferObject([
+    // True for all programs
+    this.sceneMatrices = new UniformBufferObject([
         ...mat4.create(), // view
         ...mat4.create(), // projection
     ]);
+
+    // True for all programs
     this.directional = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
 
@@ -49,17 +58,40 @@ class Renderer {
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.indices), gl.STATIC_DRAW);
       }
 
-      // Texture buffer
-      const textureBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
+      // UV's buffer
+  
+      let textureBuffer;
+      if (geometry.uvs) {
+        textureBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
+      }
 
-      // Should probably hold all buffers here..
+      // Material buffer
+      let materialBuffer;
+      if (geometry.vertexMaterialIndices) {
+        materialBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, materialBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Int32Array(geometry.vertexMaterialIndices), gl.STATIC_DRAW);
+      }
+
+      // Update materials
+      const materialData = mesh.material.materialData;
+      console.log("mat data", materialData)
+      for (let i = 0; i < materialData.length; ++i) {
+        const m = materialData[i];
+        this.material.update([
+          //...object._materials[i]
+          ...m.ambient
+        ], i * 4); // Real chunk size here
+      }
+
       mesh.buffers = {
         positions: positionBuffer,
         indices: indexBuffer,
         normals: normalBuffer,
-        uvs: textureBuffer
+        uvs: textureBuffer,
+        materialIds: materialBuffer
       }
     });
   }
@@ -79,15 +111,18 @@ class Renderer {
 
     material.activate();
     material.setUniform("numLights", scene.lights.length);
+    //material.setUniform("hasMaterial", false);
 
     const gl = glContext();
+   
+    const materialLocation = gl.getUniformBlockIndex(program, 'materialBuffer');
+    const modelLocation = gl.getUniformBlockIndex(program, 'modelMatrices');
+    const sceneLocation = gl.getUniformBlockIndex(program, 'sceneMatrices');
+    const directionalLocation = gl.getUniformBlockIndex(program, 'directionalBuffer');
 
-    const modelLocation = gl.getUniformBlockIndex(program, 'perModel');
-    const sceneLocation = gl.getUniformBlockIndex(program, 'perScene');
-    const directionalLocation = gl.getUniformBlockIndex(program, 'directional');
-
-    gl.uniformBlockBinding(program, sceneLocation, this.perScene.location);
-    gl.uniformBlockBinding(program, modelLocation, this.perModel.location);
+    gl.uniformBlockBinding(program, materialLocation, this.material.location);
+    gl.uniformBlockBinding(program, sceneLocation, this.sceneMatrices.location);
+    gl.uniformBlockBinding(program, modelLocation, this.modelMatrices.location);
     gl.uniformBlockBinding(program, directionalLocation, this.directional.location);
 
     // Calculate normal matrix
@@ -99,11 +134,11 @@ class Renderer {
     mat4.invert(normalMatrix, modelViewMatrix);
     mat4.transpose(normalMatrix, normalMatrix);
 
-    this.perModel.update([
+    // Bind Uniform buffer object
+    this.modelMatrices.update([
       ...modelMatrix,
       ...normalMatrix
     ]);
-    material.setInternalUniforms();
 
     // UV's
     {
@@ -152,6 +187,23 @@ class Renderer {
       );
     }
 
+    // Materials
+    if (object.buffers.materialIds) {
+      {
+        gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.materialIds);
+        gl.enableVertexAttribArray(
+          object.material.programInfo.attribLocations.materialId);
+        gl.vertexAttribIPointer(
+          object.material.programInfo.attribLocations.materialId,
+          1,
+          gl.UNSIGNED_SHORT,
+          false,
+          0,
+          0
+        );
+      }
+    }
+
     if (object.buffers.indices) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.buffers.indices);
       gl.drawElements(gl.TRIANGLES, object.indexCount, gl.UNSIGNED_SHORT, 0);
@@ -162,20 +214,19 @@ class Renderer {
   }
 
   _internalRender(scene, camera) {
-    this.perScene.bind();
+    this.sceneMatrices.bind();
     this.directional.bind();
-    this.perModel.bind();
+    this.modelMatrices.bind();
+    this.material.bind();
 
-    this.perScene.update([
+    this.sceneMatrices.update([
       ...camera.viewMatrix,
       ...camera.projectionMatrix
     ]);
 
     // Lights
     for (let i = 0; i < scene.lights.length; i++) {
-
       const pos = scene.lights[i].position;
-
       const lightPosVec4 = vec4.fromValues(pos[0], pos[1], pos[2], 1.0);
 
       const lModelMatrix = scene.lights[i].modelMatrix;
@@ -183,7 +234,6 @@ class Renderer {
       mat4.multiply(lModelView, camera.viewMatrix, lModelMatrix);
 
       const out = vec4.create();
-
       vec4.transformMat4(out, lightPosVec4, camera.viewMatrix);
       this.directional.update([
         ...scene.lights[i].color,
@@ -227,6 +277,7 @@ class Renderer {
 
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12;
 Renderer.MAX_LIGHTS = 16;
+Renderer.MAX_MATERIALS = 16;
 
 export const glContext = () => {
   return context;

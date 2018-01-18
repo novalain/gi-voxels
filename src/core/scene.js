@@ -11,7 +11,6 @@ class Scene {
 
   // TODO: One generic add
   addLight(light) {
-    console.log(light);
     this.lights.push(light);
   }
 

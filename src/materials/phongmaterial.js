@@ -16,12 +16,12 @@ class PhongMaterial {
     }
 
     const vsSource = `#version 300 es
-      uniform perModel {
+      uniform modelMatrices {
         mat4 modelMatrix;
         mat4 normalMatrix;
       };
 
-      uniform perScene {
+      uniform sceneMatrices {
         mat4 viewMatrix;
         mat4 projectionMatrix;
       };
@@ -29,15 +29,18 @@ class PhongMaterial {
       in vec3 position;
       in vec3 normal;
       in vec2 uv;
+      in float materialId;
 
       out vec3 vPosition;
       out vec3 vNormal;
       out vec2 vUv;
+      out float vMaterial;
 
       void main() {
         vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
         vUv = uv;
         vPosition = vec3(viewMatrix * modelMatrix * vec4(position, 1.0));
+        vMaterial = materialId;
         gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
       }
     `;
@@ -46,6 +49,7 @@ class PhongMaterial {
       precision mediump float;
 
       const int MAX_DIRECTIONAL_LIGHTS = 16;
+      const int MAX_MATERIALS = 16;
 
       struct Directional {
         vec4 color;
@@ -53,15 +57,23 @@ class PhongMaterial {
         vec3 position;
       };
 
-      uniform directional {
+      struct Material {
+        vec3 ambient;
+      };
+
+      uniform materialBuffer {
+        Material materials[MAX_MATERIALS];
+      };
+
+      uniform directionalBuffer {
         Directional directionalLights[MAX_DIRECTIONAL_LIGHTS];
       };
 
       uniform int numLights;
       uniform vec3 color;
-      uniform sampler2D textureMap;
+      //uniform sampler2D textureMap;
 
-      vec3 ka = vec3(0.0);
+      vec3 ka = vec3(0.8);
       vec3 kd = vec3(0.64, 0.48, 0.32);
       vec3 ks = vec3(0.5, 0.5, 0.5);
       float shininess = 96.078431;
@@ -73,6 +85,7 @@ class PhongMaterial {
       in vec3 vPosition;
       in vec3 vNormal;
       in vec2 vUv;
+      in float vMaterial;
 
       out vec4 outColor;
 
@@ -89,32 +102,32 @@ class PhongMaterial {
         spec = Is * ks * pow(max(dot(r,v) , 0.0 ), shininess);
       }
 
-
       void main() {
-        vec3 ambientSum = vec3(0);
-        vec3 diffuseSum = vec3(0);
-        vec3 specSum = vec3(0);
-        vec3 ambient, diffuse, spec;
+        // vec3 ambientSum = vec3(0);
+        // vec3 diffuseSum = vec3(0);
+        // vec3 specSum = vec3(0);
+        // vec3 ambient, diffuse, spec;
 
-        if (gl_FrontFacing) {
-          for (int i = 0; i < numLights; ++i) {
-            light(i, vPosition, vNormal, ambient, diffuse, spec);
-            ambientSum += ambient;
-            diffuseSum += diffuse;
-            specSum += spec;
-          }
-        } else {
-          for (int i = 0; i < numLights; ++i) {
-            light(i, vPosition, -vNormal, ambient, diffuse, spec);
-            ambientSum += ambient;
-            diffuseSum += diffuse;
-            specSum += spec;
-          }
-        }
-        ambientSum /= float(numLights);
+        // if (gl_FrontFacing) {
+        //   for (int i = 0; i < numLights; ++i) {
+        //     light(i, vPosition, vNormal, ambient, diffuse, spec);
+        //     ambientSum += ambient;
+        //     diffuseSum += diffuse;
+        //     specSum += spec;
+        //   }
+        // } else {
+        //   for (int i = 0; i < numLights; ++i) {
+        //     light(i, vPosition, -vNormal, ambient, diffuse, spec);
+        //     ambientSum += ambient;
+        //     diffuseSum += diffuse;
+        //     specSum += spec;
+        //   }
+        // }
+        // ambientSum /= float(numLights);
 
-        vec4 texColor = texture(textureMap, vUv);
-        outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
+        // vec4 texColor = texture(textureMap, vUv);
+        // outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
+        outColor = vec4(1.0, 1.0, 1.0, 1.0);
       }
     `;
 
@@ -128,6 +141,7 @@ class PhongMaterial {
     this.programInfo = {
       attribLocations: {
         position: gl.getAttribLocation(this.program, 'position'),
+        material: gl.getAttribLocation(this.program, 'materialId'),
         normal: gl.getAttribLocation(this.program, 'normal'),
         uv: gl.getAttribLocation(this.program, 'uv')
       },
@@ -137,8 +151,8 @@ class PhongMaterial {
         modelViewMatrix: gl.getUniformLocation(this.program, 'modelViewMatrix'),
         normalMatrix: gl.getUniformLocation(this.program, 'normalMatrix'),
         // Per material TODO make UBO
-        color: gl.getUniformLocation(this.program, 'color'),
-        map: gl.getUniformLocation(this.program, 'map')
+        //color: gl.getUniformLocation(this.program, 'color'),
+        //map: gl.getUniformLocation(this.program, 'map')
       },
     };
     // for (let i = 0; i < MAX_LIGHTS; ++i) {
@@ -153,39 +167,30 @@ class PhongMaterial {
       case 'numLights':
         gl.uniform1i(this.programInfo.uniformLocations.numLights, value);
       break;
-      case 'dLightPosition':
-        gl.uniform3fv(this.programInfo.uniformLocations.dLightPosition, value);
-        break;
-      case 'dLightIntensity':
-        gl.uniform1f(this.programInfo.uniformLocations.dLightIntensity, value);
-        break;
-      case 'modelViewMatrix' :
-        gl.uniformMatrix4fv(this.programInfo.uniformLocations.modelViewMatrix, false, value);
-      break;
-      case 'projectionMatrix':
-        gl.uniformMatrix4fv(this.programInfo.uniformLocations.projectionMatrix, false, value);
-      break;
-      case 'normalMatrix':
-        gl.uniformMatrix4fv(this.programInfo.uniformLocations.normalMatrix, false, value);
-      break;
-      case 'textureMap':
-        gl.uniform1i(this.programInfo.uniformLocations.textureMap, value);
+      // case 'dLightPosition':
+      //   gl.uniform3fv(this.programInfo.uniformLocations.dLightPosition, value);
+      //   break;
+      // case 'dLightIntensity':
+      //   gl.uniform1f(this.programInfo.uniformLocations.dLightIntensity, value);
+      //   break;
+      // case 'modelViewMatrix' :
+      //   gl.uniformMatrix4fv(this.programInfo.uniformLocations.modelViewMatrix, false, value);
+      // break;
+      // case 'projectionMatrix':
+      //   gl.uniformMatrix4fv(this.programInfo.uniformLocations.projectionMatrix, false, value);
+      // break;
+      // case 'normalMatrix':
+      //   gl.uniformMatrix4fv(this.programInfo.uniformLocations.normalMatrix, false, value);
+      // break;
+      //case 'textureMap':
+      //debugger;
+       // gl.uniform1i(this.programInfo.uniformLocations.textureMap, value);
+       break;
       default:
         console.warn('Unknown Uniform');
     }
   }
-
-  setInternalUniforms() {
-    const gl = glContext();
-    gl.uniform3fv(this.programInfo.uniformLocations.color, this.uniforms.color);
-
-    //if (this._texture) {
-      gl.activeTexture(gl.TEXTURE0);
-      this._texture.bind();
-      gl.uniform1i(this.programInfo.uniformLocations.textureMap, 0);
-    //}
-  }
-
+  
   activate() {
     const gl = glContext();
     gl.useProgram(this.program);

@@ -24,6 +24,14 @@ export function unflatten(arr, amount) {
   return output;
 }
 
+export function generateVertexUVs(vertices) {
+  const res = [];
+  for (let i = 0; i < vertices.length; ++i) {
+    res[i] = 0.5;
+  }
+  return res;
+}
+
 export function generateVertexNormals(positions, indices) {
   const faces = unflatten(indices, 3);
   const vertices = unflatten(positions, 3);

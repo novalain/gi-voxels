@@ -19,7 +19,7 @@
   <body>
     <span class="fps" ><span id = "fps_meter"></span> FPS</span>
     <script src="/webpack-dev-server.js"></script>
-    <script src="/dist/siick.js"></script>
+    <script src="../dist/siick.js"></script>
     <script type="text/javascript">
       const canvas = document.createElement('canvas');
       canvas.style.display = 'block';
@@ -30,10 +30,28 @@
       canvas.style.height = window.innerHeight;
       document.body.appendChild(canvas);
 
-      const objectsToLoad = {
-        //'suzanne': 'data/dabrovic/sponza.obj'
-        'suzanne': 'data/suzanne.obj'
-      };
+      //  const objectsToLoad = {
+      //     //'suzanne': 'data/dabrovic/sponza.obj'
+      //     'suzanne': 'data/suzanne.obj'
+      //   };
+
+
+      const objectsToLoad = [
+        {
+          name : 'suzanne',
+          obj: 'data/suzannefromex/die.obj',
+          mtl: true
+        },
+        // {
+        //   name: 'suzanne2',
+        //   obj: 'data/suzanne.obj'
+        // }
+       // {'suzanne': 'data/suzanne.obj'}
+      ];
+
+      // const objectMaterialsToLoad = {
+      //   'suzanne': ['data/suzanne.obj', 'data/suzanne.mtl']
+      // }
 
       const texturesToLoad = {
         'rock2': 'data/rock2.png',
@@ -42,30 +60,33 @@
 
       const objLoader = new siick.ObjectLoader();
       const resourceLoader = new siick.ResourceLoader();
+      const materialLoader = new siick.MaterialLoader();
 
+      //materialLoader.load(objectMaterialsToLoad);
       const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
-      const loadObjectsPromise = objLoader.load(objectsToLoad);
+      const loadObjectsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
 
       Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
 
-        console.info("Finished!");
+        console.log("Suzanne raw data! (missing texcoords - hardcoded)", objectArray[0]);
+        
         const scene = new siick.Scene();
         const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
         const renderer = new siick.Renderer(canvas);
         const geometry = new siick.Cube(0.5, 0.5, 0.5);
-        const materials = [];
+        //const materials = [];
 
-        const phongMaterial = new siick.PhongMaterial(
-          {
-            color : [1.0, 0.0, 0.0],
-            map: textures[1].rock
-          }
-        );
+        // const phongMaterial = new siick.PhongMaterial(
+        //   {
+        //     color : [1.0, 0.0, 0.0],
+        //     map: textures[1].rock
+        //   }
+        // );
 
-        materials.push(phongMaterial);
+        //materials.push(phongMaterial);
 
-        const cube = new siick.Mesh(geometry, phongMaterial);
-        const cube2 = new siick.Mesh(geometry, phongMaterial);
+        //const cube = new siick.Mesh(geometry, phongMaterial);
+        //const cube2 = new siick.Mesh(geometry, phongMaterial);
 
         const directionalLight = new siick.DirectionalLight(
           {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
@@ -74,16 +95,18 @@
         directionalLight.position[0] += 2.0;
         directionalLight.position[1] += 5.0;
 
-        const suzanne = new siick.Mesh(objectArray[0], phongMaterial);
+        const suzanne = new siick.Mesh(objectArray[0]);
+
         scene.add(suzanne);
-        scene.add(cube2);
-        scene.add(cube);
+       // scene.add(cube2);
+       // scene.add(cube);
         scene.addLight(directionalLight);
 
+        // MUST be called after all objects has been added to scene
         renderer.postInitialize(scene);
 
-        cube.position[0] += 2.0;
-        cube2.position[0] -= 2.0;
+        //cube.position[0] += 2.0;
+        //cube2.position[0] -= 2.0;
 
         const oc = new siick.FlyControls(camera);
        // const ob = new siick.OrbitControls(camera);
@@ -102,9 +125,9 @@
 
           //suzanne.rotation[0] += 0.01;
           //suzanne.rotation[1] += 0.01;
-          cube.rotation[0] += 0.01;
-          cube.rotation[1] += 0.01;
-          cube2.rotation = cube.rotation;
+          //cube.rotation[0] += 0.01;
+          //cube.rotation[1] += 0.01;
+          //cube2.rotation = cube.rotation;
 
           renderer.render(scene, camera);
           requestAnimationFrame(render);

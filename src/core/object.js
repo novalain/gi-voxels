@@ -1,6 +1,6 @@
 import { vec3, mat3, mat4, quat } from 'gl-matrix';
 
-class Object {
+class Entity {
   constructor() {
     this.quaternionAxisAngle = vec3.create();
     this.position = vec3.create();
@@ -25,4 +25,4 @@ class Object {
   }
 }
 
-export default Object;
+export default Entity;
