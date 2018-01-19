@@ -15,9 +15,15 @@ class GenericMaterial {
     // } else {
     //     console.warn("Material must have a texture ATM!")
     // }
-    const textureData = params[0].mapDiffuse.texture;
-    this._texture = new Texture();
-    this._texture.createTexture(textureData);
+
+    this._textures = [];
+      
+    for (let i = 0; i < params.length; i++) {
+      const tex = new Texture();
+      tex.createTexture(params[i].mapDiffuse.texture);
+      this._textures.push(tex);
+    }
+
     this.materialData = params; 
   
     const vsSource = `#version 300 es
@@ -59,6 +65,7 @@ class GenericMaterial {
 
       const int MAX_DIRECTIONAL_LIGHTS = 16;
       const int MAX_MATERIALS = 16;
+      const int MAX_MAPS = 6;
 
       struct Directional {
         vec4 color;
@@ -80,7 +87,7 @@ class GenericMaterial {
 
       uniform int numLights;
       uniform vec3 color;
-      uniform sampler2D textureMap;
+      uniform sampler2D textureMap[MAX_MAPS];
 
       vec3 ka = vec3(0.8);
       vec3 kd = vec3(0.64, 0.48, 0.32);
@@ -134,9 +141,17 @@ class GenericMaterial {
         }
         ambientSum /= float(numLights);
 
-        vec4 texColor = texture(textureMap, vUv);
+        vec4 texColor = texture(textureMap[numLights], vUv);
         outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
-       // vec3 a = materials[vMaterial].ambient;
+        
+        // vec4 out;
+        // for (int i = 0; i < vMaterial; i++) {
+        //   out = mix(vec4(1.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0), 0.5);
+        // }
+
+       // outColor = out;
+
+        //vec3 a = materials[vMaterial].ambient;
         //outColor = vec4(a, 1.0);
       }
     `;

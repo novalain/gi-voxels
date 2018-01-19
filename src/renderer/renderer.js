@@ -114,12 +114,17 @@ class Renderer {
     const gl = glContext();
 
     // TODO Bind all textures
-    //for (let i = 0; i < materialData.length; ++i) {
-      gl.activeTexture(gl.TEXTURE0);
-      material._texture.bind();
-      gl.uniform1i(material.programInfo.uniformLocations.textureMap, 0);
-    //}
-    //material.setUniform("hasMaterial", false);
+    let itx;
+
+    let samplerLocations = new Int32Array(material.materialData.length);
+    for (itx = 0; itx < material.materialData.length; ++itx) {
+      const location = gl.getUniformLocation(program, 'textureMap[' + itx + ']');
+      gl.activeTexture(gl.TEXTURE0 + itx);
+      material._textures[itx].bind();
+      gl.uniform1i(location, itx);
+    }
+
+    //console.log("Num textures bound", itx);
 
    
     const materialLocation = gl.getUniformBlockIndex(program, 'materialBuffer');
