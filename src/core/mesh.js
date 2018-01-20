@@ -1,3 +1,4 @@
+import { glContext } from '../renderer/renderer.js';
 import Entity from './object.js';
 import GenericMaterial from '../materials/genericmaterial.js';
 
@@ -6,7 +7,7 @@ class Mesh extends Entity {
     super();
 
     this._geometry = geometry;
-    this._buffers = undefined;
+    this._buffers = this._initializeBuffers();
     this.indexCount = geometry.indices.length;
 
     if (material) {
@@ -20,6 +21,56 @@ class Mesh extends Entity {
     } 
   }
 
+  get material() { return this._material; }
+  get buffers() { return this._buffers; }
+  get geometry() { return this._geometry; }
+
+  _initializeBuffers() {
+    const geometry = this._geometry;
+    const gl = glContext();
+
+    // Position buffer
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.positions), gl.STATIC_DRAW);
+
+    // Normal buffer
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
+
+    // Index buffer
+    let indexBuffer;
+    if (geometry.indices && geometry.indices.length) {
+      indexBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.indices), gl.STATIC_DRAW);
+    }
+
+    // UV's buffer  
+    let textureBuffer;
+    if (geometry.uvs) {
+      textureBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
+    }
+
+    // Material buffer
+    let materialBuffer;
+    if (geometry.vertexMaterialIndices) {
+      materialBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, materialBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Uint16Array(geometry.vertexMaterialIndices), gl.STATIC_DRAW);
+    }
+
+    return {
+      positions: positionBuffer,
+      indices: indexBuffer,
+      normals: normalBuffer,
+      uvs: textureBuffer,
+      materialIds: materialBuffer
+    }
+  }
 
   // TODO Move to generic material
   initializeMaterialData(data, materials) {
@@ -36,12 +87,6 @@ class Mesh extends Entity {
     //   const materialIndex = data.materialIndices;
     // }
   }
-
-  get material() { return this._material; }
-  get buffers() { return this._buffers; }
-  get geometry() { return this._geometry; }
-
-  set buffers(buffers) { this._buffers = buffers; }
   //set material(material) { this._material = material; }
 }
 

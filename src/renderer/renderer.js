@@ -37,49 +37,11 @@ class Renderer {
   _initializeBuffers(scene) {
     // Allocate buffers for scene
     scene.objects.forEach(mesh => {
-      const geometry = mesh.geometry;
-      const gl = glContext();
-
-      // Position buffer
-      const positionBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.positions), gl.STATIC_DRAW);
-
-      // Normal buffer
-      const normalBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
-
-      // Index buffer
-      let indexBuffer;
-      if (geometry.indices && geometry.indices.length) {
-        indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.indices), gl.STATIC_DRAW);
-      }
-
-      // UV's buffer
-  
-      let textureBuffer;
-      if (geometry.uvs) {
-        textureBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
-      }
-
-      // Material buffer
-      let materialBuffer;
-      if (geometry.vertexMaterialIndices) {
-        materialBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, materialBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Uint16Array(geometry.vertexMaterialIndices), gl.STATIC_DRAW);
-      }
-
+    
       // Update materials
       const materialData = mesh.material.materialData;
       for (let i = 0; i < materialData.length; ++i) {
         const m = materialData[i];
-        debugger;
         this.material.update([
           //...object._materials[i]
           ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
@@ -88,14 +50,6 @@ class Renderer {
           ...[...m.specular, 0.0], // vec3 16  48
           m.specularExponent
         ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE ); // Real chunk size here
-      }
-
-      mesh.buffers = {
-        positions: positionBuffer,
-        indices: indexBuffer,
-        normals: normalBuffer,
-        uvs: textureBuffer,
-        materialIds: materialBuffer
       }
     });
   }
