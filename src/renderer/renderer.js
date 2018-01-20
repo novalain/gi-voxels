@@ -17,12 +17,12 @@ class Renderer {
     // This is not true for all programs ...
     // On the other hand might only have one program in the end that I
     // just pass materialdata to (when setting a custom material such as phong). 
-    this.material = new UniformBufferObject(new Float32Array(Renderer.MAX_MATERIALS * 16));    
+    this.material = new UniformBufferObject(new Float32Array(Renderer.MAX_MATERIALS * Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     
     // True for all programs
     this.modelMatrices = new UniformBufferObject([
         ...mat4.create(), // model
-        ...mat4.create(), // normal
+        ...mat4.create(), // normal 
     ]);
     // True for all programs
     this.sceneMatrices = new UniformBufferObject([
@@ -79,10 +79,15 @@ class Renderer {
       const materialData = mesh.material.materialData;
       for (let i = 0; i < materialData.length; ++i) {
         const m = materialData[i];
+        debugger;
         this.material.update([
           //...object._materials[i]
-          ...m.ambient
-        ], i * 4); // Real chunk size here
+          ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
+          ...[...m.diffuse, 0.0], // vec3 16  16
+          ...[...m.emissive, 0.0], // vec3 16  32
+          ...[...m.specular, 0.0], // vec3 16  48
+          m.specularExponent
+        ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE ); // Real chunk size here
       }
 
       mesh.buffers = {
@@ -249,9 +254,9 @@ class Renderer {
       const out = vec4.create();
       vec4.transformMat4(out, lightPosVec4, camera.viewMatrix);
       this.directional.update([
-        ...scene.lights[i].color,
-        ...[scene.lights[i].intensity, 0.0, 0.0, 0.0],
-        ...out,
+        ...scene.lights[i].color,  // vec4 16
+        ...[scene.lights[i].intensity, 0.0, 0.0, 0.0], // vec4 16
+        ...out, // vec4 16 // EQ : CHUNK SIZE SHOULD BE.... CS = TOTALSIZE / ( SIZEOF(FLOAT) ( == 4 ))
       ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
 
@@ -288,7 +293,8 @@ class Renderer {
   }
 }
 
-Renderer.LIGHT_DATA_CHUNK_SIZE = 12;
+Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
+Renderer.MATERIAL_DATA_CHUNK_SIZE = 20;
 Renderer.MAX_LIGHTS = 16;
 Renderer.MAX_MATERIALS = 16;
 

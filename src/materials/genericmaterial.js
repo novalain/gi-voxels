@@ -74,7 +74,11 @@ class GenericMaterial {
       };
 
       struct Material {
-        vec3 ambient;
+        vec4 ambient;
+        vec4 diffuse;
+        vec4 emissive;
+        vec4 specular;
+        float specularExponent;
       };
 
       layout (std140) uniform materialBuffer {
@@ -89,19 +93,14 @@ class GenericMaterial {
       uniform vec3 color;
       uniform sampler2D textureMap[MAX_MAPS];
 
-      vec3 ka = vec3(0.8);
-      vec3 kd = vec3(0.64, 0.48, 0.32);
-      vec3 ks = vec3(0.5, 0.5, 0.5);
-      float shininess = 96.078431;
-
-      vec3 Ia = vec3(0.3);
-      vec3 Id = vec3(0.5);
-      vec3 Is = vec3(0.5);
-
       in vec3 vPosition;
       in vec3 vNormal;
       in vec2 vUv;
       flat in uint vMaterial;
+
+      vec3 Ia = vec3(0.3);
+      vec3 Id = vec3(0.5);
+      vec3 Is = vec3(0.5);
 
       out vec4 outColor;
 
@@ -110,6 +109,11 @@ class GenericMaterial {
         vec3 s = normalize(directionalLights[lightIndex].position - pos);
         vec3 v = normalize(-pos);
         vec3 r = reflect(-s,n);
+
+        vec3 ka = materials[vMaterial].ambient.xyz; //vec3(0.8);
+        vec3 kd = materials[vMaterial].diffuse.xyz;  //vec3(0.64, 0.48, 0.32);
+        vec3 ks = materials[vMaterial].specular.xyz; // vec3(0.5, 0.5, 0.5);
+        float shininess = materials[vMaterial].specularExponent;
 
         ambient = Ia * ka;
         float sDotN = max(dot(s,n), 0.0);
@@ -141,7 +145,7 @@ class GenericMaterial {
         }
         ambientSum /= float(numLights);
 
-        vec4 texColor = texture(textureMap[numLights], vUv);
+        vec4 texColor = texture(textureMap[vMaterial], vUv);
         outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
         
         // vec4 out;
@@ -151,8 +155,8 @@ class GenericMaterial {
 
        // outColor = out;
 
-        //vec3 a = materials[vMaterial].ambient;
-        //outColor = vec4(a, 1.0);
+        //vec4 a = materials[vMaterial].diffuse;
+        //outColor = vec4(a.xyz, 1.0);
       }
     `;
 
