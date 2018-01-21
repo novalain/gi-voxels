@@ -8,210 +8,95 @@ let context;
 class Renderer {
   constructor(canvas) {
     this._initialize();
+    this.initializedMaterialUBO = false;
   }
 
   _initialize() {
-    this.ratio = global.devicePixelRatio;
+    //this.ratio = global.devicePixelRatio;
     context = canvas.getContext('webgl2', {antialias: false});
 
-    // This is not true for all programs ...
-    // On the other hand might only have one program in the end that I
-    // just pass materialdata to (when setting a custom material such as phong). 
-    this.material = new UniformBufferObject(new Float32Array(Renderer.MAX_MATERIALS * Renderer.MATERIAL_DATA_CHUNK_SIZE));    
-    
-    // True for all programs
-    this.modelMatrices = new UniformBufferObject([
+    this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_MATERIALS * Renderer.MATERIAL_DATA_CHUNK_SIZE));    
+    // True for all programs, keep in mesh ??
+    this.modelMatricesUBO = new UniformBufferObject([
         ...mat4.create(), // model
         ...mat4.create(), // normal 
     ]);
-    // True for all programs
-    this.sceneMatrices = new UniformBufferObject([
+
+    this.sceneMatricesUBO = new UniformBufferObject([
         ...mat4.create(), // view
         ...mat4.create(), // projection
     ]);
-
-    // True for all programs
-    this.directional = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
-  }
-
-  _initializeBuffers(scene) {
-    // Allocate buffers for scene
-    scene.objects.forEach(mesh => {
-    
-      // Update materials
-      const materialData = mesh.material.materialData;
-      for (let i = 0; i < materialData.length; ++i) {
-        const m = materialData[i];
-        this.material.update([
-          //...object._materials[i]
-          ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
-          ...[...m.diffuse, 0.0], // vec3 16  16
-          ...[...m.emissive, 0.0], // vec3 16  32
-          ...[...m.specular, 0.0], // vec3 16  48
-          m.specularExponent
-        ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE ); // Real chunk size here
-      }
-    });
-  }
-
-  postInitialize(scene) {
-    this._initializeBuffers(scene);
-  }
-
-  setRatio(ratio) {
-    this.ratio = ratio;
+    this.directionalUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
 
   _renderObject(object, scene, camera) {
-    // For each light source upload position and other info here..
-    const material = object.material;
-    const program = material.program;
 
-    material.activate();
-    material.setUniform("numLights", scene.lights.length);
-
-    const gl = glContext();
-
-    // TODO Bind all textures
-    let itx;
-
-    let samplerLocations = new Int32Array(material.materialData.length);
-    for (itx = 0; itx < material.materialData.length; ++itx) {
-      const location = gl.getUniformLocation(program, 'textureMap[' + itx + ']');
-      gl.activeTexture(gl.TEXTURE0 + itx);
-      material._textures[itx].bind();
-      gl.uniform1i(location, itx);
+    // Each object has its own material, update the UBO
+    const materials = object.shader.materials;
+    for (let i = 0; i < materials.length; ++i) {
+      const m = materials[i];
+      this.materialUBO.update([
+        //...object._materials[i]
+        ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
+        ...[...m.diffuse, 0.0], // vec3 16  16
+        ...[...m.emissive, 0.0], // vec3 16  32
+        ...[...m.specular, 0.0], // vec3 16  48
+       // m.specularExponent
+      ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE); // Real chunk size here
     }
+  
+    // For each light source upload position and other info here..
+    //const material = object.material;
+    
+    const shader = object.shader;
+    const program = shader.program;
+    const programInfo = shader.programInfo;
 
-    //console.log("Num textures bound", itx);
+    shader.activate(); // Unique shader per object
+    const gl = glContext();
+    gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
 
-   
-    const materialLocation = gl.getUniformBlockIndex(program, 'materialBuffer');
-    const modelLocation = gl.getUniformBlockIndex(program, 'modelMatrices');
-    const sceneLocation = gl.getUniformBlockIndex(program, 'sceneMatrices');
-    const directionalLocation = gl.getUniformBlockIndex(program, 'directionalBuffer');
-
-    gl.uniformBlockBinding(program, materialLocation, this.material.location);
-    gl.uniformBlockBinding(program, sceneLocation, this.sceneMatrices.location);
-    gl.uniformBlockBinding(program, modelLocation, this.modelMatrices.location);
-    gl.uniformBlockBinding(program, directionalLocation, this.directional.location);
+    // Update lights
+    shader.bindTextures();
+    
+    // These doesn't change?
+    // Needs to happen per frame
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directional, this.directionalUBO.location);
 
     // Calculate normal matrix
-    const modelMatrix = object.modelMatrix;
-    const normalMatrix = mat4.create();
-    const modelViewMatrix = mat4.create();
-
-    mat4.multiply(modelViewMatrix, camera.viewMatrix, modelMatrix);
-    mat4.invert(normalMatrix, modelViewMatrix);
-    mat4.transpose(normalMatrix, normalMatrix);
-
+    // Per object    
     // Bind Uniform buffer object
-    this.modelMatrices.update([
-      ...modelMatrix,
-      ...normalMatrix
+    this.modelMatricesUBO.update([
+      ...object.modelMatrix,
+      ...object.normalMatrix
     ]);
-
-    // UV's
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.uvs);
-      // Bind attributes
-      gl.enableVertexAttribArray(
-          object.material.programInfo.attribLocations.uv);
-      gl.vertexAttribPointer(
-          object.material.programInfo.attribLocations.uv,
-          2,
-          gl.FLOAT,
-          false,
-          0,
-          0
-      );
-    }
-
-    // Normals
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.normals);
-      // Bind attributes
-      gl.enableVertexAttribArray(
-          object.material.programInfo.attribLocations.normal);
-      gl.vertexAttribPointer(
-          object.material.programInfo.attribLocations.normal,
-          3,
-          gl.FLOAT,
-          false,
-          0,
-          0
-      );
-    }
-
-    // Positions
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.positions);
-      gl.enableVertexAttribArray(
-          object.material.programInfo.attribLocations.position);
-      gl.vertexAttribPointer(
-          object.material.programInfo.attribLocations.position,
-          3,
-          gl.FLOAT,
-          false,
-          0,
-          0
-      );
-    }
-
-    // Materials
-    if (object.buffers.materialIds) {
-      {
-      
-        gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.materialIds);
-        gl.enableVertexAttribArray(
-          object.material.programInfo.attribLocations.materialId);
-        gl.vertexAttribIPointer(
-          object.material.programInfo.attribLocations.materialId,
-          1,
-          gl.UNSIGNED_SHORT,
-          false,
-          0,
-          0
-        );
-      }
-    }
-
-    if (object.buffers.indices) {
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.buffers.indices);
-      gl.drawElements(gl.TRIANGLES, object.indexCount, gl.UNSIGNED_SHORT, 0);
-    } else {
-      gl.bindBuffer(gl.ARRAY_BUFFER, object.buffers.positions);
-      gl.drawArrays(gl.TRIANGLES, 0, object.geometry.positions.length / 3.0);
-    }
+    object.draw();
   }
 
   _internalRender(scene, camera) {
-    this.sceneMatrices.bind();
-    this.directional.bind();
-    this.modelMatrices.bind();
-    this.material.bind();
+    // Bind UBO's, this needs to happen each frame
+    this.sceneMatricesUBO.bind();
+    this.directionalUBO.bind();
+    this.modelMatricesUBO.bind();
+    this.materialUBO.bind();
 
-    this.sceneMatrices.update([
+    // Update per scene ubos
+    this.sceneMatricesUBO.update([
       ...camera.viewMatrix,
       ...camera.projectionMatrix
     ]);
 
-    // Lights
+    // Update per scene light's UBO
     for (let i = 0; i < scene.lights.length; i++) {
-      const pos = scene.lights[i].position;
-      const lightPosVec4 = vec4.fromValues(pos[0], pos[1], pos[2], 1.0);
-
-      const lModelMatrix = scene.lights[i].modelMatrix;
-      const lModelView = mat4.create();
-      mat4.multiply(lModelView, camera.viewMatrix, lModelMatrix);
-
-      const out = vec4.create();
-      vec4.transformMat4(out, lightPosVec4, camera.viewMatrix);
-      this.directional.update([
-        ...scene.lights[i].color,  // vec4 16
-        ...[scene.lights[i].intensity, 0.0, 0.0, 0.0], // vec4 16
-        ...out, // vec4 16 // EQ : CHUNK SIZE SHOULD BE.... CS = TOTALSIZE / ( SIZEOF(FLOAT) ( == 4 ))
-      ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
+      const l = scene.lights[i];
+      this.directionalUBO.update([
+         ...l.color,  // vec4 16
+         ...[l.intensity, 0.0, 0.0, 0.0], // vec4 16
+         ...[l.positionViewSpace[0], l.positionViewSpace[1], l.positionViewSpace[2]], // vec4 16 // EQ : CHUNK SIZE SHOULD BE.... CS = TOTALSIZE / ( SIZEOF(FLOAT) ( == 4 ))
+       ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
 
     // TODO:
@@ -248,9 +133,9 @@ class Renderer {
 }
 
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
-Renderer.MATERIAL_DATA_CHUNK_SIZE = 20;
+Renderer.MATERIAL_DATA_CHUNK_SIZE = 16;
 Renderer.MAX_LIGHTS = 16;
-Renderer.MAX_MATERIALS = 16;
+Renderer.MAX_MATERIALS = 30;
 
 export const glContext = () => {
   return context;

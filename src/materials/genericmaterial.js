@@ -2,7 +2,6 @@ import { glContext } from '../renderer/renderer.js';
 import { vec4 } from 'gl-matrix';
 import { createAndCompileProgram } from '../renderer/renderer_utils.js';
 import Texture from '../renderer/texture.js';
-import texture from '../renderer/texture.js';
 
 // TODO: Create generic material class
 class GenericMaterial {

@@ -33,9 +33,6 @@ class ObjectLoader {
         // WARNING UGLY HACK AF!!!! Give images enough time to load!!!
         setTimeout( () => {
           Object.entries(models).forEach(([name, mesh]) => {
-            if (!mesh.materialsByIndex[0].mapDiffuse.texture.height) {
-              console.warn("IMG not loaded properly");
-            }
             const generateNormals = !mesh.vertexNormals || !mesh.vertexNormals.length || isNaN(mesh.vertexNormals[0]);
             const generateUVs = !mesh.textures || !mesh.textures.length || isNaN(mesh.textures[0]);
             if (generateNormals)
@@ -43,21 +40,24 @@ class ObjectLoader {
             if (generateUVs) 
               console.info("Generating UVs manually...");
             const res = {
-              positions: mesh.vertices,
-              normals: generateNormals ? generateVertexNormals(mesh.vertices, mesh.indices) : mesh.vertexNormals,
-              indices: mesh.indices,
-              uvs: generateUVs ? generateVertexUVs(mesh.vertices) : mesh.textures,
-              vertexMaterialIndices: mesh.vertexMaterialIndices,
-              materialIndices: mesh.materialIndices,
               name: name,
-              materialNames: mesh.materialNames,
-              materialsByIndex: mesh.materialsByIndex,
-              hasMaterials: mesh.has_materials
+              objectData : {
+                positions: mesh.vertices,
+                normals: generateNormals ? generateVertexNormals(mesh.vertices, mesh.indices) : mesh.vertexNormals,
+                indices: mesh.indices,
+                uvs: generateUVs ? generateVertexUVs(mesh.vertices) : mesh.textures,
+              },
+              materialData : {
+                vertexMaterialIndices: mesh.vertexMaterialIndices,
+                materialIndices: mesh.materialIndices,
+                materialNames: mesh.materialNames,
+                materialsByIndex: mesh.materialsByIndex,
+              }
             };
             resObjectArray.push(res);
           });
           resolve(resObjectArray);
-        }, 500);
+        }, 1500);
       })
     });
   }

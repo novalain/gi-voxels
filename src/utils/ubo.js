@@ -21,6 +21,7 @@ class UniformBufferObject {
   // TODO: Dont upload all
   update(data, offset = 0) {
     const gl = glContext();
+    //debugger;
     this.data.set(data, offset);
     gl.bindBuffer(gl.UNIFORM_BUFFER, this.buffer);
     gl.bufferSubData(gl.UNIFORM_BUFFER, 0, this.data, 0, null);
@@ -28,6 +29,7 @@ class UniformBufferObject {
   }
 }
 
+// Static
 UniformBufferObject.location = 0;
 
 export default UniformBufferObject;

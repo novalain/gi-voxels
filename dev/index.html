@@ -38,7 +38,7 @@
 
       const objectsToLoad = [
         {
-          name : 'suzanne',
+          name : 'die',
           obj: 'data/suzannefromex/die.obj',
           mtl: true,
         //  downloadMtlTextures: true
@@ -56,28 +56,28 @@
       // }
 
       const texturesToLoad = {
-        'rock2': 'data/rock2.png',
-        'rock' : 'data/rock.png'
+        'placeholder': 'placeholder.jpg'
       };
 
       const objLoader = new siick.ObjectLoader();
       const resourceLoader = new siick.ResourceLoader();
-      const materialLoader = new siick.MaterialLoader();
+      //const materialLoader = new siick.MaterialLoader();
 
       //materialLoader.load(objectMaterialsToLoad);
       const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
-      const loadObjectsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
+      const loadModelsAndMaterialsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
 
-      Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
-
-        console.log("Suzanne raw data! (missing texcoords - hardcoded)", objectArray[0]);
+      Promise.all([loadModelsAndMaterialsPromise, loadImagesPromise]).then(([objMatData, imgData]) => {
+        console.log("object and mat data", objMatData[0]);
         
+
+        const placeHolderImg = imgData[0].placeholder.data;
+
         const scene = new siick.Scene();
         const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
         const renderer = new siick.Renderer(canvas);
         const geometry = new siick.Cube(0.5, 0.5, 0.5);
         //const materials = [];
-
         // const phongMaterial = new siick.PhongMaterial(
         //   {
         //     color : [1.0, 0.0, 0.0],
@@ -96,22 +96,48 @@
 
         directionalLight.position[0] += 2.0;
         directionalLight.position[1] += 5.0;
+          
+        // FFS separate mesh data and material data here
+        // Create mesh
 
-        const suzanne = new siick.Mesh(objectArray[0]);
+        // I HAVE ALREADY COMMITTED TO HAVING ONE SHADER!!!!!!
 
-        scene.add(suzanne);
-       // scene.add(cube2);
-       // scene.add(cube);
+        // Non-material buffers
+        // Set up buffers for mesh
+        const dieMesh = new siick.Mesh(objMatData[0].objectData);
+        //dieMesh.setupBuffers(objMatData[0]);
+        
+      
+        // If specified material in obj file, parse it!
+        if (objMatData[0].materialData) {
+          // Set up the uber shader, based on material Data
+          //const material = new siick.Material(objMatData[0].materialData);
+          dieMesh.attachShader(objMatData[0].materialData, placeHolderImg);
+        } // Otherwise, parse some material seleted by user
+        // else {
+        //   const material = new Material("materials/phong.material");
+        // }
+
+        
+
+        //die = new siick.Mesh(objMatData[0]);
+
+        
+        
+      
+
+
+
+        // Create program and pass material data
+        
+      
+        scene.add(dieMesh);
         scene.addLight(directionalLight);
 
         // MUST be called after all objects has been added to scene
-        renderer.postInitialize(scene);
+        //renderer.postInitialize(scene);
 
-        //cube.position[0] += 2.0;
-        //cube2.position[0] -= 2.0;
-
-        const oc = new siick.FlyControls(camera);
-       // const ob = new siick.OrbitControls(camera);
+        const fl = new siick.FlyControls(camera);
         const fpsMeter = document.getElementById("fps_meter");
 
         let prev = 0;
@@ -123,14 +149,10 @@
 
           fpsMeter.innerHTML = fps;
 
-          oc.update(0.1);
+          fl.update(0.1);
 
-          //suzanne.rotation[0] += 0.01;
-          //suzanne.rotation[1] += 0.01;
-          //cube.rotation[0] += 0.01;
-          //cube.rotation[1] += 0.01;
-          //cube2.rotation = cube.rotation;
-
+          //dieMesh.rotation[0] += 0.01;
+          //dieMesh.rotation[1] += 0.01;
           renderer.render(scene, camera);
           requestAnimationFrame(render);
         }
