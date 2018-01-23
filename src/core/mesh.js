@@ -54,7 +54,7 @@ class Mesh extends Entity {
     if (geometry.indices && geometry.indices.length) {
       indexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(geometry.indices), gl.STATIC_DRAW);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(geometry.indices), gl.STATIC_DRAW);
     }
 
     // UV's buffer  
@@ -139,9 +139,9 @@ class Mesh extends Entity {
         );
       }
     }
-    if (this._buffers.indices) {
+    if (true) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._buffers.indices);
-      gl.drawElements(gl.TRIANGLES, this._indexCount, gl.UNSIGNED_SHORT, 0);
+      gl.drawElements(gl.TRIANGLES, this._indexCount, gl.UNSIGNED_INT, 0);
     } else {
       gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.positions);
       gl.drawArrays(gl.TRIANGLES, 0, this._geometry.positions.length / 3.0);

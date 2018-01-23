@@ -16,13 +16,12 @@ class GenericMaterial {
     // }
 
     this._textures = [];
-      
     for (let i = 0; i < params.length; i++) {
       const tex = new Texture();
       tex.createTexture(params[i].mapDiffuse.texture);
       this._textures.push(tex);
     }
-
+    
     this.materialData = params; 
   
     const vsSource = `#version 300 es

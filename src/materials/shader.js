@@ -9,22 +9,20 @@ class Shader {
     this.materials = [];
     Object.entries(materialData.materialIndices).forEach(([key, value]) => {
       const material = materialData.materialsByIndex[value];
-
-      console.log("Material name ", key);
-      console.log("INdex!!", value);
-      console.log("Maps to" , material);
-      console.log("==============================")
-
+      // console.log("Material name ", key);
+      // console.log("INdex!!", value);
+      // console.log("Maps to" , material);
+      // console.log("==============================")
       this.materials.push(material);
     });
 
     console.log("Num materials in mesh", this.materials.length);
-
     this._textures = [];
     // Iterate through textures and create them!!!
     for (let i = 0; i < this.materials.length; i++) {
       const tex = new Texture();
 
+      // Missing texture
       if (!this.materials[i].mapDiffuse) {
         tex.createTexture(placeHolderImg);
         this._textures.push(tex);
@@ -76,8 +74,8 @@ class Shader {
       precision highp int;
 
       const int MAX_DIRECTIONAL_LIGHTS = 16;
-      const int MAX_MATERIALS = 30;
-      const int MAX_MAPS = 6;
+      const int MAX_MATERIALS = 25;
+      const int MAX_MAPS = 16;
 
       struct Directional {
         vec4 color;
@@ -90,6 +88,7 @@ class Shader {
         vec4 diffuse;
         vec4 emissive;
         vec4 specular;
+        //bool hasDiffuseMap;
         //float specularExponent;
       };
 
@@ -160,17 +159,12 @@ class Shader {
         ambientSum /= float(numLights);
 
         vec4 texColor = texture(textureMap[vMaterial], vUv);
-        outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
-        
-        // vec4 out;
-        // for (int i = 0; i < vMaterial; i++) {
-        //   out = mix(vec4(1.0, 0.0, 0.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0), 0.5);
-        // }
-
-       // outColor = out;
-
-        //vec4 a = materials[vMaterial].diffuse;
-        //outColor = vec4(a.xyz, 1.0);
+       
+        if (true) {
+          outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
+        } else {
+          outColor = vec4(ambientSum + diffuseSum, 1.0) + vec4(specSum, 1.0);
+        }
       }
     `;
 

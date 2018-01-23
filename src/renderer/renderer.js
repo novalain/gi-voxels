@@ -30,7 +30,6 @@ class Renderer {
   }
 
   _renderObject(object, scene, camera) {
-
     // Each object has its own material, update the UBO
     const materials = object.shader.materials;
     for (let i = 0; i < materials.length; ++i) {
@@ -41,6 +40,7 @@ class Renderer {
         ...[...m.diffuse, 0.0], // vec3 16  16
         ...[...m.emissive, 0.0], // vec3 16  32
         ...[...m.specular, 0.0], // vec3 16  48
+        //m.mapDiffuse ? true : false  // bool
        // m.specularExponent
       ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE); // Real chunk size here
     }
@@ -81,8 +81,11 @@ class Renderer {
     this.sceneMatricesUBO.bind();
     this.directionalUBO.bind();
     this.modelMatricesUBO.bind();
-    this.materialUBO.bind();
+    this.materialUBO.bind(); 
+    const gl = glContext();
 
+    console.log("MAX ARRAY ", gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS));
+    
     // Update per scene ubos
     this.sceneMatricesUBO.update([
       ...camera.viewMatrix,
@@ -135,7 +138,7 @@ class Renderer {
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
 Renderer.MATERIAL_DATA_CHUNK_SIZE = 16;
 Renderer.MAX_LIGHTS = 16;
-Renderer.MAX_MATERIALS = 30;
+Renderer.MAX_MATERIALS = 25;
 
 export const glContext = () => {
   return context;

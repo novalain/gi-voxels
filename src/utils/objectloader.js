@@ -30,7 +30,7 @@ class ObjectLoader {
       const p = OBJ.downloadModels(objectList);
       p.then(models => {
         let resObjectArray = [];
-        // WARNING UGLY HACK AF!!!! Give images enough time to load!!!
+        // WARNING UGLY HACK AF!!!! Give images enough time to load - TODO - Loop through all textures in all object and resolve those promises
         setTimeout( () => {
           Object.entries(models).forEach(([name, mesh]) => {
             const generateNormals = !mesh.vertexNormals || !mesh.vertexNormals.length || isNaN(mesh.vertexNormals[0]);

@@ -37,13 +37,18 @@
 
 
       const objectsToLoad = [
-        {
-          name : 'die',
-          obj: 'data/suzannefromex/die.obj',
-          mtl: true,
-        //  downloadMtlTextures: true
-          //mtlTextureRoot: '/dev/data/suzannefromex/'
-        },
+      {
+        name : 'die',
+        obj: 'data/suzannefromex/die.obj',
+        //obj: 'data/deferredsponza/sponza.obj',
+        //obj: 'data/crysponza2/sponzaexpmerged.obj',
+        //obj: 'data/cornell/cornellsphere.obj',
+        //obj: 'data/dragon.obj',
+        //obj: 'data/bf/withoutsmoothandlinesandkeep.obj',
+        mtl: true,
+      //  downloadMtlTextures: true
+        //mtlTextureRoot: '/dev/data/suzannefromex/'
+      },
         // {
         //   name: 'suzanne2',
         //   obj: 'data/suzanne.obj'
@@ -74,7 +79,7 @@
         const placeHolderImg = imgData[0].placeholder.data;
 
         const scene = new siick.Scene();
-        const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
+        const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 10000.0);
         const renderer = new siick.Renderer(canvas);
         const geometry = new siick.Cube(0.5, 0.5, 0.5);
         //const materials = [];

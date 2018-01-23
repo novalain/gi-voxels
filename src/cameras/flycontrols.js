@@ -9,8 +9,8 @@ const FlyControls = function (camera, domElement = undefined) {
   this.domElement = gl.canvas;
 
   // API
-  this.movementSpeed = 1.5;
-  this.rollSpeed = 0.12;
+  this.movementSpeed = 5.5;
+  this.rollSpeed = 0.22;
 
   this.dragToLook = true;
   this.autoForward = false;
