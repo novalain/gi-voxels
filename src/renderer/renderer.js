@@ -15,7 +15,7 @@ class Renderer {
     //this.ratio = global.devicePixelRatio;
     context = canvas.getContext('webgl2', {antialias: false});
 
-    this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_MATERIALS * Renderer.MATERIAL_DATA_CHUNK_SIZE));    
+    this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
     this.modelMatricesUBO = new UniformBufferObject([
         ...mat4.create(), // model
@@ -31,40 +31,22 @@ class Renderer {
 
   _renderObject(object, scene, camera) {
     // Each object has its own material, update the UBO
-    const materials = object.shader.materials;
-    for (let i = 0; i < materials.length; ++i) {
-      const m = materials[i];
-      this.materialUBO.update([
-        //...object._materials[i]
-        ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
-        ...[...m.diffuse, 0.0], // vec3 16  16
-        ...[...m.emissive, 0.0], // vec3 16  32
-        ...[...m.specular, 0.0], // vec3 16  48
-        //m.mapDiffuse ? true : false  // bool
-       // m.specularExponent
-      ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE); // Real chunk size here
-    }
+    // const materials = object.shader.materials;
+    // for (let i = 0; i < materials.length; ++i) {
+    //   const m = materials[i];
+    //   this.materialUBO.update([
+    //     //...object._materials[i]
+    //     ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
+    //     ...[...m.diffuse, 0.0], // vec3 16  16
+    //     ...[...m.emissive, 0.0], // vec3 16  32
+    //     ...[...m.specular, 0.0], // vec3 16  48
+    //     //m.mapDiffuse ? true : false  // bool
+    //    // m.specularExponent
+    //   ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE); // Real chunk size here
+    // }
   
     // For each light source upload position and other info here..
     //const material = object.material;
-    
-    const shader = object.shader;
-    const program = shader.program;
-    const programInfo = shader.programInfo;
-
-    shader.activate(); // Unique shader per object
-    const gl = glContext();
-    gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
-
-    // Update lights
-    shader.bindTextures();
-    
-    // These doesn't change?
-    // Needs to happen per frame
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directional, this.directionalUBO.location);
 
     // Calculate normal matrix
     // Per object    
@@ -73,7 +55,45 @@ class Renderer {
       ...object.modelMatrix,
       ...object.normalMatrix
     ]);
-    object.draw();
+    
+    // Per material
+    for (let i = 0; i < object.shaders.length; ++i) {
+      const shader = object.shaders[i];
+      const program = shader.program;
+      const programInfo = shader.programInfo;
+
+      const hasDiffuse = Boolean(shader.materialData.mapDiffuse);
+
+        // UPDATE THIS
+      this.materialUBO.update([
+        //...object._materials[i]
+        ...[...shader.materialData.ambient, 0.0], // vec3 16  0 REAL 12
+        ...[...shader.materialData.diffuse, 0.0], // vec3 16  16
+        ...[...shader.materialData.emissive, 0.0], // vec3 16  32
+        ...[...shader.materialData.specular, 0.0], // vec3 16  48
+        hasDiffuse ? true : false  // bool
+       // m.specularExponent
+      ]); // Real chunk size here
+
+      shader.activate();
+
+      const gl = glContext();
+      gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
+
+      // Update lights
+
+      if (hasDiffuse) {
+        shader.bindTextures();
+      }
+      
+      // These doesn't change?
+      // Needs to happen per frame
+      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
+      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
+      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
+      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directional, this.directionalUBO.location);
+      object.draw(i);
+    }
   }
 
   _internalRender(scene, camera) {
@@ -82,9 +102,6 @@ class Renderer {
     this.directionalUBO.bind();
     this.modelMatricesUBO.bind();
     this.materialUBO.bind(); 
-    const gl = glContext();
-
-    console.log("MAX ARRAY ", gl.getParameter(gl.MAX_ARRAY_TEXTURE_LAYERS));
     
     // Update per scene ubos
     this.sceneMatricesUBO.update([
@@ -136,7 +153,7 @@ class Renderer {
 }
 
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
-Renderer.MATERIAL_DATA_CHUNK_SIZE = 16;
+Renderer.MATERIAL_DATA_CHUNK_SIZE = 20;
 Renderer.MAX_LIGHTS = 16;
 Renderer.MAX_MATERIALS = 25;
 

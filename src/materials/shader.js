@@ -6,7 +6,8 @@ import Texture from '../renderer/texture.js';
 // OK, so we need to create the shader last when we have info about the whole scene and program
 class Shader {
   constructor(materialData, meshBuffers, placeHolderImg) {
-    this.materials = [];
+    //this.materials = [];
+    
     Object.entries(materialData.materialIndices).forEach(([key, value]) => {
       const material = materialData.materialsByIndex[value];
       // console.log("Material name ", key);
