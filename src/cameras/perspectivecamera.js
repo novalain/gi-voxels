@@ -19,7 +19,7 @@ class PerspectiveCamera extends Object {
 
     this.position[0] = 0;
     this.position[1] = 0;
-    this.position[2] = 0;
+    this.position[2] = 10;
   }
 
   //get projectionMatrix() { return this.projectionMatrix; }
@@ -33,7 +33,7 @@ class PerspectiveCamera extends Object {
     mat4.lookAt(this.viewMatrix, this.position, this.target, this.up);
   }
 
-  update() {
+  updateProjectionMatrix() {
     const gl = glContext();
     mat4.perspective(
       this.projectionMatrix,

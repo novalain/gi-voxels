@@ -11,7 +11,7 @@ class ObjectLoader {
         Object.entries(meshes).forEach(([key, value]) => {
           const generateNormals = !value.vertexNormals || !value.vertexNormals.length || isNaN(value.vertexNormals[0]);
           if (generateNormals)
-            console.log("Generating normals manually ...")
+            console.log("Generating normals manually ...", value)
           const res = {
             positions: value.vertices,
             normals: generateNormals ? generateVertexNormals(value.vertices, value.indices) : value.vertexNormals,
@@ -214,9 +214,9 @@ class ObjectLoader {
             const generateNormals = !mesh.vertexNormals || !mesh.vertexNormals.length || isNaN(mesh.vertexNormals[0]);
             const generateUVs = !mesh.textures || !mesh.textures.length || isNaN(mesh.textures[0]);
             if (generateNormals)
-              console.info("Generating normals manually ...");
+              console.info("Generating normals manually ...", name);
             if (generateUVs) 
-              console.info("Generating UVs manually...");
+              console.info("Generating UVs manually...", name);
             const res = {
               name: name,
               objectData : {

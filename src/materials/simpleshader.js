@@ -64,10 +64,33 @@ class SimpleShader {
             out vec3 vNormal;
             out vec2 vUv;
 
+            // TODO CALCULATE ALL IN SHADER
             void main() {
-                vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
+                
+                mat4 normalMatrix2 = transpose(inverse(viewMatrix * modelMatrix));
+
+                mat4 normalMatrix3 = viewMatrix * modelMatrix;
+                //vNormal = normalize(vec3(normalMatrix * vec4(normal, 1.0)));
+                
+                //ENLIGT FORUMET
+                //vNormal = normalize( mat3(normalMatrix) * normal);
+                
+                //vNormal = normal;
+                // NORMAL MATRIX IS OK
+                
+                //vNormal = normalize(mat3(normalMatrix2) * normal);
+                vNormal = vec3(normalMatrix3 * vec4(normal, 1.0));
+
                 vUv = uv;
+                // Vertex position in View space
+
+                // DOES NOT WORK WTF - same space
                 vPosition = vec3(viewMatrix * modelMatrix * vec4(position, 1.0));
+                
+                // DOES NOT WORK CAST TO MAT3 EITHER
+                // Vertex pos in model space (WORKS BUT ROUNDED BLACK CORNERS ON BREAKFAST SCENE)
+                //vPosition = mat3(modelMatrix) * position;
+                
                 //vMaterial = materialId;
                 gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
             }
@@ -78,8 +101,11 @@ class SimpleShader {
         precision highp int;
 
         const int MAX_DIRECTIONAL_LIGHTS = 16;
-        //const int MAX_MATERIALS = 25;
-        //const int MAX_MAPS = 16;
+
+         layout (std140) uniform sceneMatrices {
+            mat4 viewMatrix;
+            mat4 projectionMatrix;
+        };
 
         struct Directional {
             vec4 color;
@@ -92,19 +118,15 @@ class SimpleShader {
             vec4 mdiffuse;
             vec4 memissive;
             vec4 mspecular;
+            float specularExponent;
             bool hasDiffuseMap;
-            //float specularExponent;
         };
-
-        // layout (std140) uniform materialBuffer {
-        //     Material materials[MAX_MATERIALS];
-        // };
 
         layout (std140) uniform directionalBuffer {
             Directional directionalLights[MAX_DIRECTIONAL_LIGHTS];
         };
 
-        const float specularExponent = 96.0;
+       // const float specularExponent = 96.0;
 
         uniform int numLights;
         //uniform vec3 color;
@@ -116,15 +138,15 @@ class SimpleShader {
         in vec2 vUv;
         flat in uint vMaterial;
 
-        vec3 Ia = vec3(0.3);
-        vec3 Id = vec3(0.5);
-        vec3 Is = vec3(0.5);
+        vec3 Ia = vec3(0.2);
+        vec3 Id = vec3(1.0);
+        vec3 Is = vec3(1.0);
 
         out vec4 outColor;
 
         void light(int lightIndex, vec3 pos, vec3 norm, out vec3 ambient, out vec3 diffuse, out vec3 spec) {
             vec3 n = normalize(norm);
-            vec3 s = normalize(directionalLights[lightIndex].position - pos);
+            vec3 s = normalize( directionalLights[lightIndex].position  - pos);
             vec3 v = normalize(-pos);
             vec3 r = reflect(-s,n);
 
@@ -152,8 +174,9 @@ class SimpleShader {
                     ambientSum += ambient;
                     diffuseSum += diffuse;
                     specSum += spec;
-                }
-            } else {
+                }             
+            }      
+            else {
                 for (int i = 0; i < numLights; ++i) {
                     light(i, vPosition, -vNormal, ambient, diffuse, spec);
                     ambientSum += ambient;
@@ -161,14 +184,21 @@ class SimpleShader {
                     specSum += spec;
                 }
             }
+
             ambientSum /= float(numLights);
 
             vec4 texColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
-        
+
+           // outColor = vec4(directionalLights[0].position, 1.0);
+            //outColor = vec4(abs(vNormal), 1.0);
+            //outColor = vec4(mdiffuse.xyz, 1.0);// + vec4(specSum, 1.0);
+            
             if (hasDiffuseMap) {
-                outColor = vec4(ambientSum + diffuseSum, 1.0) * texColor + vec4(specSum, 1.0);
-            } else {
-                outColor = vec4(ambientSum + diffuseSum, 1.0) + vec4(specSum, 1.0);
+                outColor = vec4(diffuseSum + ambientSum, 1.0) * texColor + vec4(specSum, 1.0);
+            } 
+            
+            else {
+               outColor = vec4(diffuseSum + ambientSum, 1.0) + vec4(specSum, 1.0);
             }
         }
         `;
@@ -250,7 +280,7 @@ class SimpleShader {
     //             // gl.uniform1i(this.programInfo.uniformLocations.textureMap, value);
     //             break;
     //         default:
-    //             console.warn('Unknown Uniform');
+    //             console.warn( 'Unknown Uniform');
     //     }
     // }
 

@@ -29,7 +29,7 @@ class Mesh extends Entity {
   get material() { return this._material; }
   get buffers() { return this._buffers; }
 
-  set normalMatrix(normalMatrix) { this._normalMatrix = normalMatrix; }
+ // set normalMatrix(normalMatrix) { this._normalMatrix = normalMatrix; }
 
   attachShader(materialData, placeHolderImg) {
     

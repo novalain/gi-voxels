@@ -31,7 +31,7 @@ class Renderer {
 
   _renderObject(object, scene, camera) {
     // Each object has its own material, update the UBO
-    // const materials = object.shader.materials;
+    // const materials = object.shader.materialss;
     // for (let i = 0; i < materials.length; ++i) {
     //   const m = materials[i];
     //   this.materialUBO.update([
@@ -61,18 +61,19 @@ class Renderer {
       const shader = object.shaders[i];
       const program = shader.program;
       const programInfo = shader.programInfo;
+      const materialData = shader.materialData;
 
       const hasDiffuse = Boolean(shader.materialData.mapDiffuse);
 
         // UPDATE THIS
       this.materialUBO.update([
         //...object._materials[i]
-        ...[...shader.materialData.ambient, 0.0], // vec3 16  0 REAL 12
-        ...[...shader.materialData.diffuse, 0.0], // vec3 16  16
-        ...[...shader.materialData.emissive, 0.0], // vec3 16  32
-        ...[...shader.materialData.specular, 0.0], // vec3 16  48
+        ...[...materialData.ambient, 0.0], // vec3 16  0 REAL 12
+        ...[...materialData.diffuse, 0.0], // vec3 16  16
+        ...[...materialData.emissive, 0.0], // vec3 16  32
+        ...[...materialData.specular, 0.0], // vec3 16  48
+        materialData.specularExponent,
         hasDiffuse ? true : false  // bool
-       // m.specularExponent
       ]); // Real chunk size here
 
       shader.activate();
@@ -126,6 +127,16 @@ class Renderer {
     scene.objects.forEach(object => {
       this._renderObject(object, scene, camera);
     });
+
+    scene.lights.forEach(light => {
+      if (light._debug) {
+        // calculate MVP
+        const out = mat4.create();
+        mat4.multiply(out, camera.viewMatrix, light.modelMatrix);
+        mat4.multiply(out, camera.projectionMatrix, out);
+        light.draw(out);
+      }
+    })
   }
 
   render(scene, camera) {
@@ -138,22 +149,20 @@ class Renderer {
       gl.clearDepth(1.0); // Clear all
     }
 
+    gl.cullFace(gl.BACK);
     gl.enable(gl.CULL_FACE);
+    
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas
-
-    camera.update();
-
-    // Update
-    scene.traverse(camera);
+    
     this._internalRender(scene, camera);
   }
 }
 
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
-Renderer.MATERIAL_DATA_CHUNK_SIZE = 20;
+Renderer.MATERIAL_DATA_CHUNK_SIZE = 24;
 Renderer.MAX_LIGHTS = 16;
 Renderer.MAX_MATERIALS = 25;
 

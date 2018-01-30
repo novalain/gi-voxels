@@ -9,7 +9,7 @@ const FlyControls = function (camera, domElement = undefined) {
   this.domElement = gl.canvas;
 
   // API
-  this.movementSpeed = 20.5;
+  this.movementSpeed = 5.5;
   this.rollSpeed = 0.22;
 
   this.dragToLook = true;
@@ -186,9 +186,11 @@ const FlyControls = function (camera, domElement = undefined) {
     const negatedVec = vec3.create();
     vec3.negate(negatedVec, this.camera.position);
   
-    const translationMatrix = mat4.create();
+    //const translationMatrix = mat4.create();
     mat4.rotate(this.camera.viewMatrix, this.camera.viewMatrix, axisAngle, this.camera.quaternionAxisAngle);
     mat4.translate(this.camera.viewMatrix, this.camera.viewMatrix, negatedVec);
+    // Update projection matrix (TODO if needed)
+    this.camera.updateProjectionMatrix();
   };
 
   this.updateMovementVector = function () {
@@ -227,7 +229,6 @@ const FlyControls = function (camera, domElement = undefined) {
 
   function contextmenu(event) {
     event.preventDefault();
-
   }
 
   this.dispose = function () {

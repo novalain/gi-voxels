@@ -41,19 +41,29 @@
         name : 'die',
         //obj: 'data/suzannefromex/die.obj',
        // obj: 'data/deferredsponza/sponza.obj',
-        obj: 'data/crysponza2/sponzaexpmerged.obj',
+        //obj: 'data/crysponza2/sponzaexpmerged.obj',
         //obj: 'data/cornell/cornellsphere.obj',
         //obj: 'data/dragon.obj',ebgl
-        //obj: 'data/breakfast_room_triangulated/breakfastroom.obj',
+        obj: 'data/breakfast_room_triangulated/breakfastroom.obj',
         mtl: true,
       //  downloadMtlTextures: true
         //mtlTextureRoot: '/dev/data/suzannefromex/'
       },
+        {
+          name : 'die2',
+          obj: 'data/suzannefromex/die.obj',
+          mtl:true
+        },
         // {
         //   name: 'suzanne2',
         //   obj: 'data/suzanne.obj'
         // }
        // {'suzanne': 'data/suzanne.obj'}
+          {
+          name: 'suzanne',
+          obj: 'data/suzannefromex/suzanne.obj',
+          mtl: true
+        }
       ];
 
       // const objectMaterialsToLoad = {
@@ -73,7 +83,7 @@
       const loadModelsAndMaterialsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
 
       Promise.all([loadModelsAndMaterialsPromise, loadImagesPromise]).then(([objMatData, imgData]) => {
-        console.log("object and mat data", objMatData[0]);
+        console.log("object and mat data", objMatData);
         
 
         const placeHolderImg = imgData[0].placeholder.data;
@@ -96,11 +106,16 @@
         //const cube2 = new siick.Mesh(geometry, phongMaterial);
 
         const directionalLight = new siick.DirectionalLight(
-          {color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5}
+          {color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0}
         );
 
-        directionalLight.position[0] += 2.0;
-        directionalLight.position[1] += 5.0;
+        const directionalLight2 = new siick.DirectionalLight(
+          { color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0 , debug: true}
+        );
+
+        directionalLight2.position[0] += 0.0;
+        directionalLight2.position[1] += 30.0;
+        directionalLight2.position[2] += 0.0;
           
         // FFS separate mesh data and material data here
         // Create mesh
@@ -123,7 +138,11 @@
         //   const material = new Material("materials/phong.material");
         // }
 
+        const dieMesh2 = new siick.Mesh(objMatData[1].objectData);
+        dieMesh2.attachShader(objMatData[1].materialData, placeHolderImg);
         
+        const suzanneMesh = new siick.Mesh(objMatData[2].objectData);
+        suzanneMesh.attachShader(objMatData[2].materialData, placeHolderImg);
 
         //die = new siick.Mesh(objMatData[0]);
 
@@ -131,14 +150,25 @@
         
       
 
+        dieMesh2.position[0] += 2.0;
+
+
+        suzanneMesh.position[1] += 1.0;
 
 
         // Create program and pass material data
         
       
         scene.add(dieMesh);
-        scene.addLight(directionalLight);
+      
+          
+       scene.add(suzanneMesh);
+       scene.add(dieMesh2);
+       
+       // scene.addLight(directionalLight);
+          
 
+       scene.addLight(directionalLight2);
         // MUST be called after all objects has been added to scene
         //renderer.postInitialize(scene);
 
@@ -154,10 +184,14 @@
 
           fpsMeter.innerHTML = fps;
 
+          // Updates view matrix
           fl.update(0.1);
+          dieMesh2.rotation[0] += 0.01;
+          dieMesh2.rotation[1] += 0.01;
 
-          //dieMesh.rotation[0] += 0.01;
-          //dieMesh.rotation[1] += 0.01;
+          suzanneMesh.rotation[0] += 0.01;
+          suzanneMesh.rotation[1] += 0.01;
+          scene.traverse(camera);
           renderer.render(scene, camera);
           requestAnimationFrame(render);
         }
