@@ -41,7 +41,7 @@
         name : 'die',
         //obj: 'data/suzannefromex/die.obj',
        // obj: 'data/deferredsponza/sponza.obj',
-        //obj: 'data/crysponza2/sponzaexpmerged.obj',
+        obj: 'data/crysponza2/sponzaexpmerged.obj',
         //obj: 'data/cornell/cornellsphere.obj',
         //obj: 'data/dragon.obj',ebgl
         obj: 'data/breakfast_room_triangulated/breakfastroom.obj',
@@ -105,16 +105,16 @@
         //const cube = new siick.Mesh(geometry, phongMaterial);
         //const cube2 = new siick.Mesh(geometry, phongMaterial);
 
-        const directionalLight = new siick.DirectionalLight(
-          {color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0}
-        );
+        // const directionalLight = new siick.DirectionalLight(
+        //   {color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0}
+        // );
 
         const directionalLight2 = new siick.DirectionalLight(
           { color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0 , debug: true}
         );
 
         directionalLight2.position[0] += 0.0;
-        directionalLight2.position[1] += 30.0;
+        directionalLight2.position[1] += 4.0;
         directionalLight2.position[2] += 0.0;
           
         // FFS separate mesh data and material data here
@@ -162,13 +162,13 @@
         scene.add(dieMesh);
       
           
-       scene.add(suzanneMesh);
-       scene.add(dieMesh2);
+        scene.add(suzanneMesh);
+        scene.add(dieMesh2);
        
        // scene.addLight(directionalLight);
           
 
-       scene.addLight(directionalLight2);
+        scene.addLight(directionalLight2);
         // MUST be called after all objects has been added to scene
         //renderer.postInitialize(scene);
 

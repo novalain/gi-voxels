@@ -30,24 +30,6 @@ class Renderer {
   }
 
   _renderObject(object, scene, camera) {
-    // Each object has its own material, update the UBO
-    // const materials = object.shader.materialss;
-    // for (let i = 0; i < materials.length; ++i) {
-    //   const m = materials[i];
-    //   this.materialUBO.update([
-    //     //...object._materials[i]
-    //     ...[...m.ambient, 0.0], // vec3 16  0 REAL 12
-    //     ...[...m.diffuse, 0.0], // vec3 16  16
-    //     ...[...m.emissive, 0.0], // vec3 16  32
-    //     ...[...m.specular, 0.0], // vec3 16  48
-    //     //m.mapDiffuse ? true : false  // bool
-    //    // m.specularExponent
-    //   ], i * Renderer.MATERIAL_DATA_CHUNK_SIZE); // Real chunk size here
-    // }
-  
-    // For each light source upload position and other info here..
-    //const material = object.material;
-
     // Calculate normal matrix
     // Per object    
     // Bind Uniform buffer object
@@ -62,18 +44,17 @@ class Renderer {
       const program = shader.program;
       const programInfo = shader.programInfo;
       const materialData = shader.materialData;
+      const hasDiffuse = Boolean(materialData.mapDiffuse);
 
-      const hasDiffuse = Boolean(shader.materialData.mapDiffuse);
-
-        // UPDATE THIS
+      // UPDATE THIS
       this.materialUBO.update([
         //...object._materials[i]
         ...[...materialData.ambient, 0.0], // vec3 16  0 REAL 12
         ...[...materialData.diffuse, 0.0], // vec3 16  16
         ...[...materialData.emissive, 0.0], // vec3 16  32
         ...[...materialData.specular, 0.0], // vec3 16  48
-        materialData.specularExponent,
-        hasDiffuse ? true : false  // bool
+        materialData.specularExponent, // 4 alignment, 0 FUCKS UP
+        hasDiffuse ? true : false  // bool 
       ]); // Real chunk size here
 
       shader.activate();
@@ -114,9 +95,9 @@ class Renderer {
     for (let i = 0; i < scene.lights.length; i++) {
       const l = scene.lights[i];
       this.directionalUBO.update([
+        ...[l.positionViewSpace[0], l.positionViewSpace[1], l.positionViewSpace[2]], // vec4 16 // EQ : CHUNK SIZE SHOULD BE.... CS = TOTALSIZE / ( SIZEOF(FLOAT) ( == 4 ))
          ...l.color,  // vec4 16
-         ...[l.intensity, 0.0, 0.0, 0.0], // vec4 16
-         ...[l.positionViewSpace[0], l.positionViewSpace[1], l.positionViewSpace[2]], // vec4 16 // EQ : CHUNK SIZE SHOULD BE.... CS = TOTALSIZE / ( SIZEOF(FLOAT) ( == 4 ))
+         ...[l.intensity, 0.0, 0.0, 0.0] // vec4 16
        ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
 
