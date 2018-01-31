@@ -166,7 +166,7 @@ const FlyControls = function (camera, domElement = undefined) {
     // ACCUMULATE ROTATIONS
     this.camera.rotation[0] += this.rotationVector[0] * rotMult;
     this.camera.rotation[1] += this.rotationVector[1] * rotMult;
-    this.camera.rotation[2] += -this.rotationVector[2] * rotMult;
+    this.camera.rotation[2] += this.rotationVector[2] * rotMult;
 
     // OK BUT TILTS
     //const tmpQuaternion = quat.fromValues(this.rotationVector[0] * rotMult, this.rotationVector[1] * rotMult, 0, 1);
@@ -177,8 +177,8 @@ const FlyControls = function (camera, domElement = undefined) {
 
     quat.identity(this.camera.quaternion);
     quat.rotateX(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[0]);
-    quat.rotateY(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[1]);
     quat.rotateZ(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[2]);
+    quat.rotateY(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[1]);    
 
     const axisAngle = quat.getAxisAngle(this.camera.quaternionAxisAngle, this.camera.quaternion);
     
