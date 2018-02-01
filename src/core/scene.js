@@ -1,9 +1,13 @@
 import { mat4, vec4 } from 'gl-matrix';
+import Gui from '../gui/gui.js'
+//const dat = require('dat.gui').default;
 
 class Scene {
   constructor() {
     this.objects = [];
     this.lights = [];
+    this._gui = new Gui();
+    //this._gui = new dat.GUI();
   }
 
   add(object) {
@@ -14,6 +18,13 @@ class Scene {
   // TODO: One generic add
   addLight(light) {
     this.lights.push(light);
+
+    const lightsGui = this._gui.lights;
+    const lightsSubFolder = lightsGui.addFolder("Light " + this.lights.length);
+
+    lightsSubFolder.add(light.position, 'x', -10, 10).name("Pos x");
+    lightsSubFolder.add(light.position, 'y', -10, 10).name("Pos y");
+    lightsSubFolder.add(light.position, 'z', -10, 10).name("Pos z");
   }
 
   traverse(camera) {

@@ -13,6 +13,35 @@ import ObjectLoader from './utils/objectloader.js';
 import MaterialLoader from './utils/materialloader.js';
 import ResourceLoader from './utils/resourceloader.js';
 
+
+// TODO MOVE
+Object.defineProperty(Float32Array.prototype, "x", {
+  get: function() {
+      return this[0];
+  },
+  set: function(val) {
+      this[0] = val;
+  }
+});
+
+Object.defineProperty(Float32Array.prototype, "y", {
+  get: function() {
+      return this[1];
+  },
+  set: function(val) {
+      this[1] = val;
+  }
+});
+
+Object.defineProperty(Float32Array.prototype, "z", {
+  get: function() {
+      return this[2];
+  },
+  set: function(val) {
+      this[2] = val;
+  }
+});
+
 export {
   PhongMaterial,
   LambertMaterial,
