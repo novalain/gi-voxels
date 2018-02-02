@@ -14,7 +14,7 @@ class DirectionalLight extends Object {
     this._positionViewSpace = vec3.create();
 
     if (props.debug) {
-      const sphere = new Sphere(0.2, 6); 
+      const sphere = new Sphere(0.8, 6); 
       const gl = glContext();
 
       const positionBuffer = gl.createBuffer();

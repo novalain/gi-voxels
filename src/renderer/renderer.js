@@ -5,6 +5,18 @@ import UniformBufferObject from '../utils/ubo.js';
 // TODO: Remove global
 let context;
 
+// window.onresize = function(event) {
+//   const gl = glContext();
+//   console.log(gl.canvas.clientWidth)
+
+//   var width = window.innerWidth;
+//   var height = window.innerHeight;
+
+//   gl.canvas.width = width;
+//   gl.canvas.height = height;
+//   //gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+// };
+
 class Renderer {
   constructor(canvas) {
     this._initialize();
@@ -118,6 +130,17 @@ class Renderer {
         light.draw(out);
       }
     })
+  }
+
+  setSize(width, height) {
+    const w = width * window.devicePixelRatio;
+    const h = height * window.devicePixelRatio;
+
+    const gl = glContext();
+    gl.canvas.width = w;
+    gl.canvas.height = h;
+    gl.canvas.style.width = `${w / window.devicePixelRatio}px`;
+    gl.canvas.style.height = `${h / window.devicePixelRatio}px`;
   }
 
   render(scene, camera) {

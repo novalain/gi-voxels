@@ -22,9 +22,9 @@ class Scene {
     const lightsGui = this._gui.lights;
     const lightsSubFolder = lightsGui.addFolder("Light " + this.lights.length);
 
-    lightsSubFolder.add(light.position, 'x', -10, 10).name("Pos x");
-    lightsSubFolder.add(light.position, 'y', -10, 10).name("Pos y");
-    lightsSubFolder.add(light.position, 'z', -10, 10).name("Pos z");
+    lightsSubFolder.add(light.position, 'x', -1000, 1000).name("Pos x");
+    lightsSubFolder.add(light.position, 'y', -1000, 1000).name("Pos y");
+    lightsSubFolder.add(light.position, 'z', -1000, 1000).name("Pos z");
   }
 
   traverse(camera) {
@@ -35,7 +35,6 @@ class Scene {
 
     // update projection matrix
     
-
     // Update model and normal matrix
     for (let i = 0; i < this.objects.length; ++i) {
       this.objects[i].update();
@@ -45,7 +44,6 @@ class Scene {
       const modelViewMatrix = mat4.create();
 
       // Depends on camera, this is update.... per model
-
       mat4.multiply(modelViewMatrix, camera.viewMatrix, modelMatrix);
       //mat4.copy(modelViewMatrix, modelMatrix);
       mat4.invert(normalMatrix, modelViewMatrix);
@@ -60,18 +58,6 @@ class Scene {
       const pos = this.lights[i].position;
       // Position in World Space
       const lightPosVec4 = vec4.fromValues(pos[0], pos[1], pos[2], 1.0);
-      //const lModelMatrix = this.lights[i].modelMatrix;
-      //const lModelView = mat4.create();
-      //mat4.multiply(lModelView, camera.viewMatrix, lModelMatrix);
-      //const out = vec4.create();
-
-      // Calculate light pos in model space
-      //const lightModelMatrix = this.lights[i].modelMatrix;
-
-      //debugger;
-      //const lightModelViewMatrix = mat4.create();
-      //mat4.multiply(lightModelViewMatrix, camera.viewMatrix, lightModelMatrix);
-
       // Calculate light position in view space on CPU
       vec4.transformMat4(lightPosVec4, lightPosVec4, camera.viewMatrix);
       // TODO remove this shitty matrix lib, can't remember syntax for casting
