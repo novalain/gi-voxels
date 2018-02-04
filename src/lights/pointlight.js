@@ -1,10 +1,10 @@
 import Object from '../core/object.js';
 import { vec3 } from 'gl-matrix';
 import Sphere from '../geometry/sphere.js';
-import Mesh from '../core/mesh.js'
 import { glContext } from '../renderer/renderer.js';
 import DebugShader from '../materials/debugshader.js'
-class DirectionalLight extends Object {
+
+class PointLight extends Object {
   constructor(props) {
     super();
 
@@ -14,7 +14,7 @@ class DirectionalLight extends Object {
     this._positionViewSpace = vec3.create();
 
     if (props.debug) {
-      const sphere = new Sphere(0.8, 6); 
+      const sphere = new Sphere(1.2, 6);
       const gl = glContext();
 
       const positionBuffer = gl.createBuffer();
@@ -32,8 +32,16 @@ class DirectionalLight extends Object {
         indices: indexBuffer
       }
       this._shader = new DebugShader();
-    } 
+    }
   }
+
+  get positionViewSpace() { return this._positionViewSpace; }
+  get color() { return this._color; }
+  get intensity() { return this._intensity; }
+
+  set positionViewSpace(psv) { this._positionViewSpace = psv; }
+  set color(value) { this._color = value; }
+  set intensity(value) { this._intensity = value; }
 
   draw(mvp) {
     console.assert(this._debug);
@@ -41,7 +49,7 @@ class DirectionalLight extends Object {
     const gl = glContext();
     const programInfo = this._shader.programInfo;
     this._shader.activate();
-    
+
     gl.uniformMatrix4fv(programInfo.uniformLocations.mvp, false, mvp);
 
     // Positions
@@ -62,14 +70,6 @@ class DirectionalLight extends Object {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
     gl.drawElements(gl.TRIANGLES, this._indexCount, gl.UNSIGNED_INT, 0);
   }
-
-  get positionViewSpace() { return this._positionViewSpace; }
-  get color() { return this._color; }
-  get intensity() { return this._intensity; }
-
-  set positionViewSpace(psv) { this._positionViewSpace = psv; }
-  set color(value) { this._color = value; }
-  set intensity(value) { this._intensity = value; }
 }
 
-export default DirectionalLight;
+export default PointLight;

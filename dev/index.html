@@ -116,14 +116,10 @@
         //   {color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0}
         // );
 
-        const directionalLight2 = new siick.DirectionalLight(
+        const pointLight = new siick.PointLight(
           { color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0 , debug: true}
         );
 
-        directionalLight2.position[0] += 0.0;
-        directionalLight2.position[1] += 4.0;
-        directionalLight2.position[2] += 0.0;
-          
         // FFS separate mesh data and material data here
         // Create mesh
 
@@ -175,7 +171,7 @@
        // scene.addLight(directionalLight);
           
 
-        scene.addLight(directionalLight2);
+        scene.addLight(pointLight);
         // MUST be called after all objects has been added to scene
         //renderer.postInitialize(scene);
 

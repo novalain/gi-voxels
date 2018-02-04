@@ -8,11 +8,10 @@ import PhongMaterial from './materials/phongmaterial.js';
 import LambertMaterial from './materials/lambertmaterial.js';
 import OrbitControls from './cameras/orbitcontrols.js';
 import FlyControls from './cameras/flycontrols.js';
-import DirectionalLight from './lights/directionallight.js';
+import PointLight from './lights/pointlight.js';
 import ObjectLoader from './utils/objectloader.js';
 import MaterialLoader from './utils/materialloader.js';
 import ResourceLoader from './utils/resourceloader.js';
-
 
 // TODO MOVE
 Object.defineProperty(Float32Array.prototype, "x", {
@@ -56,6 +55,6 @@ export {
   BasicMaterial,
   OrbitControls,
   FlyControls,
-  DirectionalLight,
+  PointLight,
   ResourceLoader
 };
