@@ -3,7 +3,6 @@ import { glContext } from '../renderer/renderer.js';
 class Texture {
 	constructor() {
 		const gl = glContext();
-		this._textureSource = null;
 		this._textureId = gl.createTexture();
 	}
 
@@ -23,13 +22,11 @@ class Texture {
 		          this._width, this._height, this._border, this._format, this._dataType,
 		          this._data);
 
-		
 		if (!this._width || !this._height) {
 			console.err("Missing width or height");
 		}
 		// if (Texture.isPowerOf2(this._width) && Texture.isPowerOf2(this._height)) {
 		// // Yes, it's a power of 2. Generate mips.
-			
 		// } else {
 		// // No, it's not a power of 2. Turn of mips and set
 		// // wrapping to clamp to edge
@@ -38,9 +35,7 @@ class Texture {
 		// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		// }
-
 		gl.generateMipmap(gl.TEXTURE_2D);
-
 	}
 
 	bind() {

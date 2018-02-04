@@ -5,18 +5,6 @@ import UniformBufferObject from '../utils/ubo.js';
 // TODO: Remove global
 let context;
 
-// window.onresize = function(event) {
-//   const gl = glContext();
-//   console.log(gl.canvas.clientWidth)
-
-//   var width = window.innerWidth;
-//   var height = window.innerHeight;
-
-//   gl.canvas.width = width;
-//   gl.canvas.height = height;
-//   //gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-// };
-
 class Renderer {
   constructor(canvas) {
     this._initialize();
@@ -58,7 +46,6 @@ class Renderer {
       const materialData = shader.materialData;
       const hasDiffuse = Boolean(materialData.mapDiffuse);
 
-      // UPDATE THIS
       this.materialUBO.update([
         //...object._materials[i]
         ...[...materialData.ambient, 0.0], // vec3 16  0 REAL 12
@@ -75,7 +62,6 @@ class Renderer {
       gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
 
       // Update lights
-
       if (hasDiffuse) {
         shader.bindTextures();
       }
@@ -147,11 +133,8 @@ class Renderer {
     const gl = glContext();
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    if (true) {
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
-      gl.clearDepth(1.0); // Clear all
-    }
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearDepth(1.0); 
 
     gl.cullFace(gl.BACK);
     gl.enable(gl.CULL_FACE);

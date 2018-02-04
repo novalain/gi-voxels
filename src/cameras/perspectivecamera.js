@@ -20,10 +20,9 @@ class PerspectiveCamera extends Object {
     this.position[0] = 0;
     this.position[1] = 0;
     this.position[2] = 10;
-  }
 
-  //get projectionMatrix() { return this.projectionMatrix; }
-  //get viewMatrix() { return this.viewMatrix; }
+    this.updateProjectionMatrix();
+  }
 
   setTarget(dir) {
     vec3.copy(this.target, dir);

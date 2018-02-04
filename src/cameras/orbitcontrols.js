@@ -105,9 +105,7 @@ class OrbitControls {
     const z = Math.cos(this.ry) * r;
     vec3.set(this.camera.position, x, y, z);
     this.camera.lookAt();
-    this.camera.updateProjectionMatrix();
   }
-
 }
 
 export default OrbitControls;

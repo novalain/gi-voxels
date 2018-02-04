@@ -23,31 +23,18 @@ class Mesh extends Entity {
   }
 
   get normalMatrix() { return this._normalMatrix; }
-  get shader() { return this._shader; }
   get shaders() { return this._shaders; }
   get indexCount() { return this._indexCount; }
-  get material() { return this._material; }
   get buffers() { return this._buffers; }
 
- // set normalMatrix(normalMatrix) { this._normalMatrix = normalMatrix; }
+  set normalMatrix(normalMatrix) { this._normalMatrix = normalMatrix; }
 
   attachShader(materialData, placeHolderImg) {
-    
-    
     // If we fetch material from file - don't bother setting up this buffer
     Object.entries(materialData.materialIndices).forEach(([key, value]) => {
       const material = materialData.materialsByIndex[value];
       this._shaders.push(new SimpleShader(material, placeHolderImg));
     });
-    
-    //this._shader = new Shader(materialData, this._buffers, placeHolderImg);
-    // if (materialData.vertexMaterialIndices) { 
-    //   const gl = glContext();
-    //   const materialBuffer = gl.createBuffer();
-    //   gl.bindBuffer(gl.ARRAY_BUFFER, materialBuffer);
-    //   gl.bufferData(gl.ARRAY_BUFFER, new Uint16Array(materialData.vertexMaterialIndices), gl.STATIC_DRAW);
-    //   this._buffers.materialIds = materialBuffer;
-    // }  
   }
 
   _initializeBuffers() {
@@ -147,24 +134,7 @@ class Mesh extends Entity {
         0
       );
     }
-
-    // Materials
-    // if (this._buffers.materialIds) {
-    //   {
-
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.materialIds);
-    //     gl.enableVertexAttribArray(
-    //       programInfo.attribLocations.materialId);
-    //     gl.vertexAttribIPointer(
-    //       programInfo.attribLocations.materialId,
-    //       1,
-    //       gl.UNSIGNED_SHORT,
-    //       false,
-    //       0,
-    //       0
-    //     );
-    //   }
-    // }
+    
     if (true) {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._buffers.indices[shaderId]);
       gl.drawElements(gl.TRIANGLES, this._indexCounts[shaderId], gl.UNSIGNED_INT, 0);

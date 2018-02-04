@@ -189,8 +189,6 @@ const FlyControls = function (camera, domElement = undefined) {
     //const translationMatrix = mat4.create();
     mat4.rotate(this.camera.viewMatrix, this.camera.viewMatrix, axisAngle, this.camera.quaternionAxisAngle);
     mat4.translate(this.camera.viewMatrix, this.camera.viewMatrix, negatedVec);
-    // Update projection matrix (TODO if needed)
-    this.camera.updateProjectionMatrix();
   };
 
   this.updateMovementVector = function () {
