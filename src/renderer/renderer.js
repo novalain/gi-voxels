@@ -45,15 +45,21 @@ class Renderer {
       const programInfo = shader.programInfo;
       const materialData = shader.materialData;
       const hasDiffuse = Boolean(materialData.mapDiffuse);
+      const hasBump = Boolean(materialData.mapBump);
+      const displayBump = scene.gui.displayBump;
+      const bumpIntensity = scene.gui.bumpIntensity;
 
+      // Have to pad stuff
       this.materialUBO.update([
-        //...object._materials[i]
-        ...[...materialData.ambient, 0.0], // vec3 16  0 REAL 12
+        ...[...materialData.ambient, 0.0], // vec3 16  0
         ...[...materialData.diffuse, 0.0], // vec3 16  16
-        ...[...materialData.emissive, 0.0], // vec3 16  32
+       // ...[...materialData.emissive, 0.0], // vec3 16 32
         ...[...materialData.specular, 0.0], // vec3 16  48
-        materialData.specularExponent, // 4 alignment, 0 FUCKS UP
-        hasDiffuse ? true : false  // bool 
+        2.0,//materialData.specularExponent, // 4, 64
+        bumpIntensity, // 4, 68
+        hasDiffuse ? true : false,  // 4, 72
+        hasBump? true : false, //4, 76
+        displayBump ? true : false
       ]); // Real chunk size here
 
       shader.activate();
@@ -149,7 +155,7 @@ class Renderer {
 }
 
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
-Renderer.MATERIAL_DATA_CHUNK_SIZE = 24;
+Renderer.MATERIAL_DATA_CHUNK_SIZE = 21;
 Renderer.MAX_LIGHTS = 16;
 Renderer.MAX_MATERIALS = 25;
 

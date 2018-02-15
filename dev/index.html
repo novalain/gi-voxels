@@ -42,7 +42,7 @@
         name : 'die',
        // obj: 'data/suzannefromex/die.obj',
         //obj: 'data/deferredsponza/sponza.obj',
-        obj: 'data/crysponza2/sponzaexpmerged.obj',
+        obj: 'data/crysponza/sponza.obj',
         //obj: 'data/cornell/cornellsphere.obj',
         //obj: 'data/dragon.obj',ebgl
         //obj: 'data/breakfast_room_triangulated/breakfastroom.obj',
@@ -50,21 +50,21 @@
       //  downloadMtlTextures: true
         //mtlTextureRoot: '/dev/data/suzannefromex/'
       },
-        {
-          name : 'die2',
-          obj: 'data/suzannefromex/die.obj',
-          mtl:true
-        },
+        // {
+        //   name : 'die2',
+        //   obj: 'data/suzannefromex/die.obj',
+        //   mtl:true
+        // }
         // {
         //   name: 'suzanne2',
         //   obj: 'data/suzanne.obj'
         // }
        // {'suzanne': 'data/suzanne.obj'}
-          {
-          name: 'suzanne',
-          obj: 'data/suzannefromex/suzanne.obj',
-          mtl: true
-        }
+        //   {
+        //   name: 'suzanne',
+        //   obj: 'data/suzannefromex/suzanne.obj',
+        //   mtl: true
+        // }
       ];
 
       // const objectMaterialsToLoad = {
@@ -135,17 +135,17 @@
         if (objMatData[0].materialData) {
           // Set up the uber shader, based on material Data
           //const material = new siick.Material(objMatData[0].materialData);
-          dieMesh.attachShader(objMatData[0].materialData, placeHolderImg);
+          dieMesh.attachShader(objMatData[0].materialData);
         } // Otherwise, parse some material seleted by user
         // else {
         //   const material = new Material("materials/phong.material");
         // }
 
-        const dieMesh2 = new siick.Mesh(objMatData[1].objectData);
-        dieMesh2.attachShader(objMatData[1].materialData, placeHolderImg);
+       // const dieMesh2 = new siick.Mesh(objMatData[1].objectData);
+       // dieMesh2.attachShader(objMatData[1].materialData);
         
-        const suzanneMesh = new siick.Mesh(objMatData[2].objectData);
-        suzanneMesh.attachShader(objMatData[2].materialData, placeHolderImg);
+        //const suzanneMesh = new siick.Mesh(objMatData[2].objectData);
+        //suzanneMesh.attachShader(objMatData[2].materialData);
 
         //die = new siick.Mesh(objMatData[0]);
 
@@ -153,10 +153,10 @@
         
       
 
-        dieMesh2.position[0] += 2.0;
+        //dieMesh2.position[0] += 2.0;
 
 
-        suzanneMesh.position[1] += 1.0;
+        //suzanneMesh.position[1] += 1.0;
 
 
         // Create program and pass material data
@@ -165,8 +165,8 @@
         scene.add(dieMesh);
       
           
-        scene.add(suzanneMesh);
-        scene.add(dieMesh2);
+        //scene.add(suzanneMesh);
+        //scene.add(dieMesh2);
        
        // scene.addLight(directionalLight);
           
@@ -189,11 +189,11 @@
 
           // Updates view matrix
           fl.update(0.1);
-          dieMesh2.rotation[0] += 0.01;
-          dieMesh2.rotation[1] += 0.01;
+         // dieMesh2.rotation[0] += 0.01;
+          //dieMesh2.rotation[1] += 0.01;
 
-          suzanneMesh.rotation[0] += 0.01;
-          suzanneMesh.rotation[1] += 0.01;
+         // suzanneMesh.rotation[0] += 0.01;
+        //  suzanneMesh.rotation[1] += 0.01;
           scene.traverse(camera);
           renderer.render(scene, camera);
           requestAnimationFrame(render);

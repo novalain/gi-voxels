@@ -29,11 +29,11 @@ class Mesh extends Entity {
 
   set normalMatrix(normalMatrix) { this._normalMatrix = normalMatrix; }
 
-  attachShader(materialData, placeHolderImg) {
+  attachShader(materialData) {
     // If we fetch material from file - don't bother setting up this buffer
     Object.entries(materialData.materialIndices).forEach(([key, value]) => {
       const material = materialData.materialsByIndex[value];
-      this._shaders.push(new SimpleShader(material, placeHolderImg));
+      this._shaders.push(new SimpleShader(material));
     });
   }
 
@@ -50,6 +50,16 @@ class Mesh extends Entity {
     const normalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
+
+    // Tangent buffer
+    const tangentBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.tangents), gl.STATIC_DRAW);
+
+    // Bitangent buffer
+    const bitangentBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.bitangents), gl.STATIC_DRAW);
 
     // Index buffer's
     let indicesBuffers = [];
@@ -77,10 +87,11 @@ class Mesh extends Entity {
 
     return {
       positions: positionBuffer,
-      //indices: indexBuffer,
       indices: indicesBuffers,
       normals: normalBuffer,
-      uvs: textureBuffer
+      uvs: textureBuffer,
+      tangents: tangentBuffer,
+      bitangents: bitangentBuffer
     }
   }
 
@@ -127,6 +138,36 @@ class Mesh extends Entity {
         programInfo.attribLocations.position);
       gl.vertexAttribPointer(
         programInfo.attribLocations.position,
+        3,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+    }
+
+    // Tangents
+    {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.tangents);
+      gl.enableVertexAttribArray(
+        programInfo.attribLocations.tangent);
+      gl.vertexAttribPointer(
+        programInfo.attribLocations.tangent,
+        3,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+    }
+
+    // Bitangents
+    {
+      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.bitangents);
+      gl.enableVertexAttribArray(
+        programInfo.attribLocations.bitangent);
+      gl.vertexAttribPointer(
+        programInfo.attribLocations.bitangent,
         3,
         gl.FLOAT,
         false,

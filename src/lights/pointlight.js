@@ -14,7 +14,7 @@ class PointLight extends Object {
     this._positionViewSpace = vec3.create();
 
     if (props.debug) {
-      const sphere = new Sphere(1.2, 6);
+      const sphere = new Sphere(3.2, 6);
       const gl = glContext();
 
       const positionBuffer = gl.createBuffer();

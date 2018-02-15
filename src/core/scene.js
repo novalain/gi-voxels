@@ -8,7 +8,11 @@ class Scene {
     this.objects = [];
     this.lights = [];
     this._gui = new Gui();
+    
+    //this._gui.add(this.displayBumpMap, 'bump');
   }
+
+  get gui() { return this._gui; }
 
   add(object) {
     if (object instanceof PointLight) {

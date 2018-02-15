@@ -24,18 +24,25 @@ class Texture {
 
 		if (!this._width || !this._height) {
 			console.err("Missing width or height");
+
+	
 		}
-		// if (Texture.isPowerOf2(this._width) && Texture.isPowerOf2(this._height)) {
-		// // Yes, it's a power of 2. Generate mips.
-		// } else {
-		// // No, it's not a power of 2. Turn of mips and set
-		// // wrapping to clamp to edge
-		// 	console.warn("Non-power of 2 texture");
-		// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		// 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		// }
-		gl.generateMipmap(gl.TEXTURE_2D);
+		if (Texture.isPowerOf2(this._width) && Texture.isPowerOf2(this._height)) {
+		// Yes, it's a power of 2. Generate mips.
+			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+			// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.generateMipmap(gl.TEXTURE_2D);
+		} else {
+		// No, it's not a power of 2. Turn of mips and set
+		// wrapping to clamp to edge
+			console.warn("Non-power of 2 texture");
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		}
+		
 	}
 
 	bind() {

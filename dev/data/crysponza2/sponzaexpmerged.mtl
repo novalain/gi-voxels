@@ -11,7 +11,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/lion.png
-map_bump textures/lion_bump.png
+map_bump textures/lion_normal.png
 map_Ka textures/lion.png
 
 newmtl Material__298
@@ -24,7 +24,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/background.png
-map_bump textures/background_bump.png
+map_bump textures/background_normal.png
 map_Ka textures/background.png
 
 newmtl Material__47
@@ -72,7 +72,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/spnza_bricks_a_diff.png
-map_bump textures/spnza_bricks_a_bump.png
+map_bump textures/spnza_bricks_a_normal.png
 map_Ka textures/spnza_bricks_a_diff.png
 map_Ks textures/spnza_bricks_a_spec.png
 
@@ -98,7 +98,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/chain_texture.png
-map_bump textures/chain_texture_bump.png
+map_bump textures/chain_texture_normal.png
 map_Ka textures/chain_texture.png
 map_d textures/chain_texture_mask.png
 
@@ -112,7 +112,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/sponza_column_a_diff.png
-map_bump textures/sponza_column_a_bump.png
+map_bump textures/sponza_column_a_normal.png
 map_Ka textures/sponza_column_a_diff.png
 
 newmtl column_b
@@ -125,7 +125,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/sponza_column_b_diff.png
-map_bump textures/sponza_column_b_bump.png
+map_bump textures/sponza_column_b_normal.png
 map_Ka textures/sponza_column_b_diff.png
 
 newmtl column_c
@@ -138,7 +138,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/sponza_column_c_diff.png
-map_bump textures/sponza_column_c_bump.png
+map_bump textures/sponza_column_c_normal.png
 map_Ka textures/sponza_column_c_diff.png
 
 newmtl details
@@ -259,7 +259,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/sponza_thorn_diff.png
-map_bump textures/sponza_thorn_bump.png
+map_bump textures/sponza_thorn_normal.png
 map_Ka textures/sponza_thorn_diff.png
 map_d textures/sponza_thorn_mask.png
 
@@ -285,7 +285,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/vase_dif.png
-map_bump textures/vase_bump.png
+map_bump textures/vase_normal.png
 map_Ka textures/vase_dif.png
 
 newmtl vase_hanging
@@ -310,5 +310,5 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd textures/vase_round.png
-map_bump textures/vase_round_bump.png
+map_bump textures/vase_round_normal.png
 map_Ka textures/vase_round.png
