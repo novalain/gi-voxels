@@ -46,42 +46,21 @@ class SimpleShader {
             out vec3 vTangentViewSpace;
             out vec3 vBitangentViewSpace;
 
-            out vec3 vNormalWorldSpace;
-            out vec3 vPosWorldSpace;
-
             out mat3 TBN;
 
             void main() {
                 mat4 modelViewMatrix = viewMatrix * modelMatrix;
-
-                vec3 tangent2 = tangent;
-
-                // if ( dot(cross(normal, tangent), bitangent) < 0.0) {
-                //     tangent2 = tangent * -1.0;
-                // } else {
-                //     tangent2 = tangent;
-                // }
-
-                //vertexNormal_cameraspace = MV3x3 * normalize(vertexNormal_modelspace);
-                //vertexTangent_cameraspace = MV3x3 * normalize(vertexTangent_modelspace);
-                //vertexBitangent_cameraspace = MV3x3 * normalize(vertexBitangent_modelspace);
-
-                //vNormalViewSpace = normalize(vec3(mat3(normalMatrix) * normal));
-                //vNormalViewSpace = normalize(vec3(mat3(modelViewMatrix) * normal));
-                
-                vNormalWorldSpace = (modelMatrix * vec4(normal, 1.0)).xyz;
-                vPosWorldSpace = (modelMatrix * vec4(position, 1.0)).xyz;
-                
+                                
                 vNormalViewSpace = vec3(mat3(modelViewMatrix) * normalize(normal));
-                vTangentViewSpace = vec3(mat3(modelViewMatrix) * normalize(tangent2));
+                vTangentViewSpace = vec3(mat3(modelViewMatrix) * normalize(tangent));
                 vBitangentViewSpace = vec3(mat3(modelViewMatrix) * normalize(bitangent));
             
                 // Transpose is ok since we don't do non-uniform scaling
-                TBN = inverse(mat3(
+                TBN = transpose(mat3(
                     vTangentViewSpace,
                     vBitangentViewSpace,
                     vNormalViewSpace
-                )); // You can use dot products instead of building this matrix and transposing it. See References for details.
+                ));
                 
                 vPosViewSpace = vec3(modelViewMatrix * vec4(position, 1.0));
                 vUv = uv;
@@ -91,7 +70,7 @@ class SimpleShader {
 
     const fsSource = `#version 300 es
             precision mediump float;
-            precision mediump int; // IMPORTANT for UBO layout!!!
+            precision mediump int;
 
             const int MAX_DIRECTIONAL_LIGHTS = 16;
 
@@ -114,7 +93,7 @@ class SimpleShader {
             layout (std140) uniform materialBuffer {
                 vec4 mambient; // 16 0 
                 vec4 mdiffuse; // 16 16
-               // vec4 memissive; // 16 32
+                //vec4 memissive; // 16 32
                 vec4 mspecular; // 16 32
                 float specularExponent; // 4 48
                 float bumpIntensity; // 4 52
@@ -127,8 +106,6 @@ class SimpleShader {
                 Directional directionalLights[MAX_DIRECTIONAL_LIGHTS];
             };
 
-            const float specularExponent2 = 96.0;
-
             uniform int numLights;
             uniform sampler2D textureMap;
             uniform sampler2D bumpMap;
@@ -139,14 +116,10 @@ class SimpleShader {
             in vec3 vTangentViewSpace;
             in vec3 vBitangentViewSpace;
 
-            in vec3 vPosWorldSpace;
-            in vec3 vNormalWorldSpace;
-
             in mat3 TBN;
-
             in vec2 vUv;
-            flat in uint vMaterial;
 
+            // TODO: light uniforms
             vec3 Ia = vec3(0.2);
             vec3 Id = vec3(1.0);
             vec3 Is = vec3(1.0);
@@ -155,49 +128,15 @@ class SimpleShader {
 
             void light(int lightIndex, vec3 vPos, vec3 norm, out vec3 ambient, out vec3 diffuse, out vec3 spec) {
 
-                //mat3 TBN3 = transpose(mat3(
-                //    normalize(vTangentViewSpace),
-                //    normalize(vBitangentViewSpace),
-                //    normalize(vNormalViewSpace)
-                //)); // You can use dot products instead of building this matrix and transposing it. See References for details.
-
-                // TBN 2 start
-
-                // vec3 p1 = normalize(vPosViewSpace);
-                // vec3 n1 = normalize(vNormalViewSpace);
-
-                // //get edge vectors of the pixel triangle
-                // vec3 dp1 = dFdx( p1 );
-                // vec3 dp2 = dFdy( p1 );
-                // vec2 duv1 = dFdx( vUv );
-                // vec2 duv2 = dFdy( vUv );
-
-                // //solve the linear system
-                // vec3 dp2perp = cross( dp2, n1  );
-                // vec3 dp1perp = cross( n1 , dp1 );
-                // vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
-                // vec3 B = dp2perp * duv1.y + dp1perp * duv2.y; 
-
-                // //construct a scale-invariant frame 
-                // float invmax = inversesqrt( max( dot(T,T), dot(B,B) ) );
-                // mat3 TBN2 = mat3( T * invmax, B * invmax, n1 );
-                // TBN2 = transpose(TBN2);
-                
-                // // TBN 2 END
-
-                // Normal in view space
+                // View space
                 vec3 n = norm;
-                // Light direction in view space
                 vec3 s = directionalLights[lightIndex].positionViewSpace - vPos;
-                // Eye direction in view space
                 vec3 v = -vPos;
 
                 if (hasNormalMap) {
                     // Convert from view to tangent space
                     s = normalize(TBN * s);
                     v = normalize(TBN * v);
-                    
-                    // In tangent space z is the out vector
                     //n = normalize(n);
 
                     vec3 bn = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y)).rgb * 2.0 - 1.0;
@@ -212,30 +151,14 @@ class SimpleShader {
                     n = normalize(n);
                 }   
 
-        
+                ambient = Ia * mambient.xyz;
+                diffuse = Id * mdiffuse.xyz * max(dot(s,n), 0.0);
                 vec3 r = reflect(-s, n);
-
-                vec3 ka = mambient.xyz;
-                vec3 kd = mdiffuse.xyz;
-                vec3 ks = mspecular.xyz;
-                float shininess = specularExponent;
-
-                ambient = Ia * ka;
-                float sDotN = max(dot(s,n), 0.0);
-    
-                //float sDotN = clamp(dot(s,n), 0.0, 1.0);
-                diffuse = Id * kd * sDotN;
-
-                spec = Is * ks * pow(clamp(dot(r,v), 0.0, 1.0), shininess);
+                spec   =  Is *  mspecular.xyz * pow(clamp(dot(r,v), 0.0, 1.0), specularExponent);
             } 
         
             void main() {
-                
-                float x = float(bumpIntensity);
-
-                //mat3 TBN2 = cotangent_frame(vNormalWorldSpace, vPosWorldSpace, vUv);
-
-                vec3 ambientSum = vec3(x);
+                vec3 ambientSum = vec3(0);
                 vec3 diffuseSum = vec3(0);
                 vec3 specSum = vec3(0);
                 vec3 ambient, diffuse, spec;
