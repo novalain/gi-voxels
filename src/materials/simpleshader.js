@@ -7,6 +7,11 @@ class SimpleShader {
   constructor(materialData) {
     this._materialData = materialData;  
 
+    if (materialData.mapSpecular) {
+      this._specularMap = new Texture();
+      this._specularMap.createTexture(materialData.mapSpecular.texture);
+    }
+    
     if (materialData.mapDiffuse) {
       this._texture = new Texture();
       this._texture.createTexture(materialData.mapDiffuse.texture);
@@ -99,7 +104,9 @@ class SimpleShader {
                 float bumpIntensity; // 4 52
                 bool hasDiffuseMap; // 4 56
                 bool hasNormalMap; // 4 60
-                bool displayNormalMap; // 4 64
+                bool hasSpecularMap; // 4 64
+                bool displayNormalMap; // 4 68
+                bool displaySpecularMap;
             };
 
             layout (std140) uniform directionalBuffer {
@@ -107,8 +114,11 @@ class SimpleShader {
             };
 
             uniform int numLights;
+
+            // Textures
             uniform sampler2D textureMap;
             uniform sampler2D bumpMap;
+            uniform sampler2D specularMap;
 
             in vec3 vPosViewSpace;
             in vec3 vNormalViewSpace;
@@ -154,7 +164,7 @@ class SimpleShader {
                 ambient = Ia * mambient.xyz;
                 diffuse = Id * mdiffuse.xyz * max(dot(s,n), 0.0);
                 vec3 r = reflect(-s, n);
-                spec   =  Is *  mspecular.xyz * pow(clamp(dot(r,v), 0.0, 1.0), specularExponent);
+                spec   =  Is * vec3(1.0, 1.0, 1.0) * pow(max(dot(r,v), 0.0), specularExponent);
             } 
         
             void main() {
@@ -174,11 +184,19 @@ class SimpleShader {
                 if (displayNormalMap && hasNormalMap) {
                     vec4 bumpColor = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y));
                     outColor = bumpColor;
-                } else if (hasDiffuseMap) {
+                } else if (displaySpecularMap && hasSpecularMap) {
+                    outColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                }  else if (hasDiffuseMap) {
+
+                    // vec4 specColor = vec4(0);
+                    // if (hasSpecularMap) {
+                    //   specColor = vec4(1);
+                    //   
+                    // }
+                    vec4 specularMapColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                     vec4 texColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
-                    //outColor = bumpColor;
-                    outColor = vec4(diffuseSum, 1.0) * texColor; //+ vec4(specSum, 1.0);
-                }  else {
+                    outColor = vec4(diffuseSum, 1.0) * texColor + vec4(specSum, 1.0) * specularMapColor * float(hasSpecularMap);
+                } else {
                     outColor = vec4(1.0, 0.0, 0.0, 1.0);
                     //outColor = vec4(diffuseSum  , 1.0) + vec4(specSum, 1.0);
                 }
@@ -216,16 +234,26 @@ class SimpleShader {
 
   bindTextures() {
     const gl = glContext();
-    gl.activeTexture(gl.TEXTURE0 + 0);
-    this._texture.bind();
-    let location = gl.getUniformLocation(this.program, 'textureMap');
-    gl.uniform1i(location, 0); // Tex unit 0
+    let location;
+    if (this._texture) {
+      gl.activeTexture(gl.TEXTURE0 + 0);
+      this._texture.bind();
+      location = gl.getUniformLocation(this.program, 'textureMap');
+      gl.uniform1i(location, 0); // Tex unit 0
+    }
 
     if (this._bumpMap) {
       gl.activeTexture(gl.TEXTURE0 + 1);
       this._bumpMap.bind();
       location = gl.getUniformLocation(this.program, 'bumpMap');
       gl.uniform1i(location, 1); // Tex unit 1
+    }
+
+    if (this._specularMap) {
+      gl.activeTexture(gl.TEXTURE0 + 2);
+      this._specularMap.bind();
+      location = gl.getUniformLocation(this.program, 'specularMap');
+      gl.uniform1i(location, 2);
     }
   }
 

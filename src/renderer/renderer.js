@@ -44,8 +44,6 @@ class Renderer {
       const program = shader.program;
       const programInfo = shader.programInfo;
       const materialData = shader.materialData;
-      const hasDiffuse = Boolean(materialData.mapDiffuse);
-      const hasBump = Boolean(materialData.mapBump);
       const displayBump = scene.gui.displayBump;
       const bumpIntensity = scene.gui.bumpIntensity;
 
@@ -55,11 +53,14 @@ class Renderer {
         ...[...materialData.diffuse, 0.0], // vec3 16  16
        // ...[...materialData.emissive, 0.0], // vec3 16 32
         ...[...materialData.specular, 0.0], // vec3 16  48
-        2.0,//materialData.specularExponent, // 4, 64
+        materialData.specularExponent, // 4, 64
         bumpIntensity, // 4, 68
-        hasDiffuse ? true : false,  // 4, 72
-        hasBump? true : false, //4, 76
-        displayBump ? true : false
+        Boolean(materialData.mapDiffuse),  // 4, 72
+        Boolean(materialData.mapBump), //4, 76
+        Boolean(materialData.mapSpecular),
+        // UI global data really.. does not belong here
+        displayBump,
+        scene.gui.displaySpecular
       ]); // Real chunk size here
 
       shader.activate();
@@ -67,10 +68,7 @@ class Renderer {
       const gl = glContext();
       gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
 
-      // Update lights
-      if (hasDiffuse) {
         shader.bindTextures();
-      }
       
       // These doesn't change?
       // Needs to happen per frame
@@ -155,7 +153,7 @@ class Renderer {
 }
 
 Renderer.LIGHT_DATA_CHUNK_SIZE = 12; // EACH element is 4 bytes in float32array yielding an offset of 12 * 4 = 48 !!!
-Renderer.MATERIAL_DATA_CHUNK_SIZE = 21;
+Renderer.MATERIAL_DATA_CHUNK_SIZE = 50;
 Renderer.MAX_LIGHTS = 16;
 Renderer.MAX_MATERIALS = 25;
 
