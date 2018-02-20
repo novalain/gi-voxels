@@ -21,13 +21,14 @@
 
 <body>
     <span class="fps">
-    <span id="fps_meter"></span> FPS</span>
-    <!-- <script src="/webpack-dev-server.js"></script> -->
-    <script src="siick.min.js"></script>
+        <span id="fps_meter"></span> FPS</span>
+    <script src="/webpack-dev-server.js"></script>
+    <script src="engine.min.js"></script>
     <script type="text/javascript">
         const canvas = document.createElement('canvas');
         canvas.style.display = 'block';
         canvas.style.boxSizing = 'border-box';
+
         canvas.width = window.innerWidth * window.devicePixelRatio;
         canvas.height = window.innerHeight * window.devicePixelRatio;
         canvas.style.width = window.innerWidth;
@@ -42,15 +43,32 @@
 
         const objectsToLoad = [
             {
-                name: 'suzanne',
-                obj: 'data/suzannefromex/suzanne.obj',
-                mtl: true
+                name: 'die',
+                // obj: 'data/suzannefromex/die.obj',
+                //obj: 'data/deferredsponza/sponza.obj',
+                obj: 'data/crysponza/sponza.obj',
+                //obj: 'data/cornell/cornellsphere.obj',
+                //obj: 'data/dragon.obj',ebgl
+                //obj: 'data/breakfast_room_triangulated/breakfastroom.obj',
+                mtl: true,
+                //  downloadMtlTextures: true
+                //mtlTextureRoot: '/dev/data/suzannefromex/'
             },
+            // {
+            //   name : 'die2',
+            //   obj: 'data/suzannefromex/die.obj',
+            //   mtl:true
+            // }
             // {
             //   name: 'suzanne2',
             //   obj: 'data/suzanne.obj'
             // }
             // {'suzanne': 'data/suzanne.obj'}
+            //   {
+            //   name: 'suzanne',
+            //   obj: 'data/suzannefromex/suzanne.obj',
+            //   mtl: true
+            // }
         ];
 
         // const objectMaterialsToLoad = {
@@ -58,60 +76,53 @@
         // }
 
         const texturesToLoad = {
-            'rock2': 'data/rock2.png',
-            'rock': 'data/rock.png'
+            'placeholder': 'placeholder.jpg'
         };
 
-        const objLoader = new siick.ObjectLoader();
-        const resourceLoader = new siick.ResourceLoader();
-        const materialLoader = new siick.MaterialLoader();
+        const objLoader = new engine.ObjectLoader();
+        const resourceLoader = new engine.ResourceLoader();
+        //const materialLoader = new engine.MaterialLoader();
 
         //materialLoader.load(objectMaterialsToLoad);
-        const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
-        const loadObjectsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
+        //const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
+        const loadModelsAndMaterialsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
 
-        Promise.all([loadObjectsPromise, loadImagesPromise]).then(([objectArray, textures]) => {
+        Promise.all([loadModelsAndMaterialsPromise]).then(([objMatData]) => {
+            console.log("object and mat data", objMatData);
 
-            console.log("Suzanne raw data! (missing texcoords - hardcoded)", objectArray[0]);
+            //const placeHolderImg = imgData[0].placeholder.data;
 
-            const scene = new siick.Scene();
-            const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000.0);
-            const renderer = new siick.Renderer(canvas);
-            const geometry = new siick.Cube(0.5, 0.5, 0.5);
-            const materials = [];
+            const scene = new engine.Scene();
+            const camera = new engine.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1.0, 5000.0);
+            const renderer = new engine.Renderer(canvas);
+            const geometry = new engine.Cube(0.5, 0.5, 0.5);
 
-            const phongMaterial = new siick.PhongMaterial(
-                {
-                    color: [1.0, 0.0, 0.0],
-                    map: textures[1].rock
-                }
+
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            })
+            const pointLight = new engine.PointLight(
+                { color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0, debug: true }
             );
 
-            materials.push(phongMaterial);
+            pointLight.position[1] += 200.0;
 
-            const cube = new siick.Mesh(geometry, phongMaterial);
-            const cube2 = new siick.Mesh(geometry, phongMaterial);
+            // Non-material buffers
+            // Set up buffers for mesh
+            const dieMesh = new engine.Mesh(objMatData[0].objectData);
+            //dieMesh.setupBuffers(objMatData[0]);
 
-            const directionalLight = new siick.DirectionalLight(
-                { color: [1.0, 1.0, 1.0, 1.0], intensity: 0.5 }
-            );
+            // If specified material in obj file, parse it!
+            if (objMatData[0].materialData) {
+                dieMesh.attachShader(objMatData[0].materialData);
+            } // Otherwise, parse some material seleted by user
 
-            directionalLight.position[0] += 2.0;
-            directionalLight.position[1] += 5.0;
+            scene.add(dieMesh);
+            scene.add(pointLight);
+            // MUST be called after all objects has been added to scene
+            //renderer.postInitialize(scene);
 
-            const suzanne = new siick.Mesh(objectArray[0], phongMaterial);
-            scene.add(suzanne);
-            scene.add(cube2);
-            scene.add(cube);
-            scene.addLight(directionalLight);
-
-            renderer.postInitialize(scene);
-
-            cube.position[0] += 2.0;
-            cube2.position[0] -= 2.0;
-
-            const oc = new siick.FlyControls(camera);
-            // const ob = new siick.OrbitControls(camera);
+            const fl = new engine.FlyControls(camera);
             const fpsMeter = document.getElementById("fps_meter");
 
             let prev = 0;
@@ -123,14 +134,14 @@
 
                 fpsMeter.innerHTML = fps;
 
-                oc.update(0.1);
+                // Updates view matrix
+                fl.update(0.1);
+                // dieMesh2.rotation[0] += 0.01;
+                //dieMesh2.rotation[1] += 0.01;
 
-                //suzanne.rotation[0] += 0.01;
-                //suzanne.rotation[1] += 0.01;
-                cube.rotation[0] += 0.01;
-                cube.rotation[1] += 0.01;
-                cube2.rotation = cube.rotation;
-
+                // suzanneMesh.rotation[0] += 0.01;
+                //  suzanneMesh.rotation[1] += 0.01;
+                scene.traverse(camera);
                 renderer.render(scene, camera);
                 requestAnimationFrame(render);
             }
