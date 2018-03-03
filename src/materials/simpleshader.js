@@ -120,6 +120,7 @@ class SimpleShader {
                 bool hasDissolveMap; // 4 64
                 bool displayNormalMap; // 4 68
                 bool displaySpecularMap;
+                float texLod;
             };
 
             layout (std140) uniform pointLightsBuffer {
@@ -231,7 +232,7 @@ class SimpleShader {
                     outColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                 }  else if (hasDiffuseMap) {
                     vec4 specularMapColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
-                    vec4 texColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
+                    vec4 texColor = textureLod(textureMap, vec2(vUv.x, 1.0 - vUv.y), texLod);
                     outColor = vec4(diffuseSum, 1.0) * texColor + vec4(specSum, 1.0) * specularMapColor * float(hasSpecularMap);
                 } else {
                     // No texture

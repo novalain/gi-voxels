@@ -45,6 +45,7 @@ class Renderer {
       const programInfo = shader.programInfo;
       const materialData = shader.materialData;
       const displayBump = scene.gui.displayBump;
+      const textureLod = scene.gui.diffuseLod;
       const bumpIntensity = scene.gui.bumpIntensity;
 
       // Have to pad stuff
@@ -61,7 +62,8 @@ class Renderer {
         Boolean(materialData.mapDissolve),
         // UI global data really.. does not belong here
         displayBump,
-        scene.gui.displaySpecular
+        scene.gui.displaySpecular,
+        textureLod
       ]); // Real chunk size here
 
       shader.activate();
