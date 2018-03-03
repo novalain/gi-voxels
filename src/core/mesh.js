@@ -41,148 +41,108 @@ class Mesh extends Entity {
     const geometry = this._geometry;
     const gl = glContext();
 
-    // Position buffer
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.positions), gl.STATIC_DRAW);
-
-    // Normal buffer
-    const normalBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
-
-    // Tangent buffer
-    const tangentBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.tangents), gl.STATIC_DRAW);
-
-    // Bitangent buffer
-    const bitangentBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.bitangents), gl.STATIC_DRAW);
-
-    // Index buffer's
-    let indicesBuffers = [];
+    this._vaos = [];
     for (let i = 0; i < geometry.indicesByMaterial.length; ++i) {
+      this._vaos.push(gl.createVertexArray());
+      gl.bindVertexArray(this._vaos[i]);
+
+      // Position buffer
+      {
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.positions), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(
+          0,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+      }
+      
+      // Normal buffer
+      {
+        const normalBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.normals), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer(
+          1,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+      }
+
+      // UV's buffer  
+      {
+        const textureBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
+        // Bind attributes
+        gl.enableVertexAttribArray(
+          2);
+        gl.vertexAttribPointer(
+          2,
+          2,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+      }
+
+      // Tangents
+      {
+        // Tangent buffer
+        const tangentBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.tangents), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(
+          3);
+        gl.vertexAttribPointer(
+          3,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );  
+      }
+
+      // Bitangent buffer
+      {
+        const bitangentBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.bitangents), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(
+          4);
+        gl.vertexAttribPointer(
+          4,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+      }
+      
       const indexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(geometry.indicesByMaterial[i]), gl.STATIC_DRAW);
-      indicesBuffers.push(indexBuffer);
-    }
-
-    // let indexBuffer;
-    // if (geometry.indices && geometry.indices.length) {
-    //   indexBuffer = gl.createBuffer();
-    //   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    //   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(geometry.indices), gl.STATIC_DRAW);
-    // }
-
-    // UV's buffer  
-    let textureBuffer;
-    if (geometry.uvs) {
-      textureBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.uvs), gl.STATIC_DRAW);
-    }
-
-    return {
-      positions: positionBuffer,
-      indices: indicesBuffers,
-      normals: normalBuffer,
-      uvs: textureBuffer,
-      tangents: tangentBuffer,
-      bitangents: bitangentBuffer
-    }
+    }  
   }
 
   draw(shaderId) {
     const gl = glContext();
     const programInfo = this._shaders[shaderId].programInfo;
 
-    // UV's
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.uvs);
-      // Bind attributes
-      gl.enableVertexAttribArray(
-        programInfo.attribLocations.uv);
-      gl.vertexAttribPointer(
-        programInfo.attribLocations.uv,
-        2,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
-    }
-
-    // Normals
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.normals);
-      // Bind attributes
-      gl.enableVertexAttribArray(
-        programInfo.attribLocations.normal);
-      gl.vertexAttribPointer(
-        programInfo.attribLocations.normal,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
-    }
-
-    // Positions
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.positions);
-      gl.enableVertexAttribArray(
-        programInfo.attribLocations.position);
-      gl.vertexAttribPointer(
-        programInfo.attribLocations.position,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
-    }
-
-    // Tangents
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.tangents);
-      gl.enableVertexAttribArray(
-        programInfo.attribLocations.tangent);
-      gl.vertexAttribPointer(
-        programInfo.attribLocations.tangent,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
-    }
-
-    // Bitangents
-    {
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.bitangents);
-      gl.enableVertexAttribArray(
-        programInfo.attribLocations.bitangent);
-      gl.vertexAttribPointer(
-        programInfo.attribLocations.bitangent,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
-    }
-    
-    if (true) {
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._buffers.indices[shaderId]);
-      gl.drawElements(gl.TRIANGLES, this._indexCounts[shaderId], gl.UNSIGNED_INT, 0);
-    } else {
-      gl.bindBuffer(gl.ARRAY_BUFFER, this._buffers.positions);
-      gl.drawArrays(gl.TRIANGLES, 0, this._geometry.positions.length / 3.0);
-    }
+    gl.bindVertexArray(this._vaos[shaderId]);
+    gl.drawElements(gl.TRIANGLES, this._indexCounts[shaderId], gl.UNSIGNED_INT, 0); 
   }
 }
 

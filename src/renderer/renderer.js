@@ -64,14 +64,12 @@ class Renderer {
       ]); // Real chunk size here
 
       shader.activate();
-
       const gl = glContext();
       gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
-
-        shader.bindTextures();
+      shader.bindTextures();
       
       // These doesn't change?
-      // Needs to happen per frame
+      // Needs to happen per active bound shader
       gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
       gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
       gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);

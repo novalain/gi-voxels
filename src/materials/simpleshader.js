@@ -37,12 +37,12 @@ class SimpleShader {
                 mat4 projectionMatrix;
             };
 
-            in vec3 position;
-            in vec3 normal;
-            in vec2 uv;
+            layout(location = 0) in vec3 position;
+            layout(location = 1) in vec3 normal;
+            layout(location = 2) in vec2 uv;
 
-            in vec3 tangent;
-            in vec3 bitangent;
+            layout(location = 3) in vec3 tangent;
+            layout(location = 4) in vec3 bitangent;
             
             out vec3 vPosViewSpace;
             out vec2 vUv;
@@ -209,15 +209,6 @@ class SimpleShader {
     this.program = createAndCompileProgram(gl, vsSource, fsSource);
     // Keep uniform and attribute locations
     this.programInfo = {
-      attribLocations: {
-        position: gl.getAttribLocation(this.program, 'position'),
-        normal: gl.getAttribLocation(this.program, 'normal'),
-        // How do we know that uv exists here? And in shader btw
-        uv: gl.getAttribLocation(this.program, 'uv'),
-        tangent: gl.getAttribLocation(this.program, 'tangent'),
-        bitangent: gl.getAttribLocation(this.program, 'bitangent'),
-        materialId: gl.getAttribLocation(this.program, 'materialId')
-      },
       uniformLocations: {
         numLights: gl.getUniformLocation(this.program, 'numLights')
       },
