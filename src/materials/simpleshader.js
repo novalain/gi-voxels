@@ -22,6 +22,11 @@ class SimpleShader {
       this._bumpMap.createTexture(materialData.mapBump.texture);
     }
 
+    if (materialData.mapDissolve) {
+        this._dissolveMap = new Texture();
+        this._dissolveMap.createTexture(materialData.mapDissolve.texture);
+    }
+
     // Create shader based on params
     const vsSource = `#version 300 es
             precision mediump int;
@@ -112,6 +117,7 @@ class SimpleShader {
                 bool hasDiffuseMap; // 4 56
                 bool hasNormalMap; // 4 60
                 bool hasSpecularMap; // 4 64
+                bool hasDissolveMap; // 4 64
                 bool displayNormalMap; // 4 68
                 bool displaySpecularMap;
             };
@@ -131,6 +137,7 @@ class SimpleShader {
             uniform sampler2D textureMap;
             uniform sampler2D bumpMap;
             uniform sampler2D specularMap;
+            uniform sampler2D dissolveMap;
 
             in vec3 vPosViewSpace;
             in vec3 vNormalViewSpace;
@@ -215,25 +222,31 @@ class SimpleShader {
                 }          
 
                 ambientSum /= float(numLights);
-            
+
+        
                 if (displayNormalMap && hasNormalMap) {
                     vec4 bumpColor = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y));
                     outColor = bumpColor;
                 } else if (displaySpecularMap && hasSpecularMap) {
                     outColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                 }  else if (hasDiffuseMap) {
-
-                    // vec4 specColor = vec4(0);
-                    // if (hasSpecularMap) {
-                    //   specColor = vec4(1);
-                    //   
-                    // }
                     vec4 specularMapColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                     vec4 texColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                     outColor = vec4(diffuseSum, 1.0) * texColor + vec4(specSum, 1.0) * specularMapColor * float(hasSpecularMap);
                 } else {
+                    // No texture
                     outColor = vec4(1.0, 0.0, 0.0, 1.0);
-                    //outColor = vec4(diffuseSum  , 1.0) + vec4(specSum, 1.0);
+                    //outColor = vec4(diffuseSum, 1.0) + vec4(specSum, 1.0);
+                }
+
+                // Dissolve map
+                // TODO: Greyscale, this is a waste of memory
+                if (hasDissolveMap) {
+                    vec4 alphaVal = texture(dissolveMap, vec2(vUv.x, 1.0 - vUv.y));
+                    
+                    if (alphaVal.x < 0.001) {
+                        discard;
+                    }
                 }
             }
         `;
@@ -282,6 +295,13 @@ class SimpleShader {
       this._specularMap.bind();
       location = gl.getUniformLocation(this.program, 'specularMap');
       gl.uniform1i(location, 2);
+    }
+
+    if (this._dissolveMap) {
+        gl.activeTexture(gl.TEXTURE0 + 3);
+        this._dissolveMap.bind();
+        location = gl.getUniformLocation(this.program, 'dissolveMap');
+        gl.uniform1i(location, 3);
     }
   }
 

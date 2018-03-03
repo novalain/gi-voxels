@@ -58,6 +58,7 @@ class Renderer {
         Boolean(materialData.mapDiffuse),  // 4, 72
         Boolean(materialData.mapBump), //4, 76
         Boolean(materialData.mapSpecular),
+        Boolean(materialData.mapDissolve),
         // UI global data really.. does not belong here
         displayBump,
         scene.gui.displaySpecular
