@@ -31,150 +31,48 @@
       canvas.style.height = window.innerHeight;
       document.body.appendChild(canvas);
 
-      //  const objectsToLoad = {
-      //     //'suzanne': 'data/dabrovic/sponza.obj'
-      //     'suzanne': 'data/suzanne.obj'
-      //   };
-
-
-      const objectsToLoad = [
-      {
+      const objectsToLoad = [{
         name : 'die',
-       // obj: 'data/suzannefromex/die.obj',
-        //obj: 'data/deferredsponza/sponza.obj',
         obj: 'data/crysponza/sponza.obj',
-        //obj: 'data/cornell/cornellsphere.obj',
-        //obj: 'data/dragon.obj',ebgl
-        //obj: 'data/breakfast_room_triangulated/breakfastroom.obj',
         mtl: true,
-      //  downloadMtlTextures: true
-        //mtlTextureRoot: '/dev/data/suzannefromex/'
       },
-        // {
-        //   name : 'die2',
-        //   obj: 'data/suzannefromex/die.obj',
-        //   mtl:true
-        // }
-        // {
-        //   name: 'suzanne2',
-        //   obj: 'data/suzanne.obj'
-        // }
-       // {'suzanne': 'data/suzanne.obj'}
-        //   {
-        //   name: 'suzanne',
-        //   obj: 'data/suzannefromex/suzanne.obj',
-        //   mtl: true
-        // }
       ];
-
-      // const objectMaterialsToLoad = {
-      //   'suzanne': ['data/suzanne.obj', 'data/suzanne.mtl']
-      // }
 
       const texturesToLoad = {
         'placeholder': 'placeholder.jpg'
       };
 
-      const objLoader = new siick.ObjectLoader();
-      const resourceLoader = new siick.ResourceLoader();
-      //const materialLoader = new siick.MaterialLoader();
-
+      
+      //const resourceLoader = new siick.ResourceLoader();
       //materialLoader.load(objectMaterialsToLoad);
-      const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
+      //const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
+      
+      const objLoader = new siick.ObjectLoader();
       const loadModelsAndMaterialsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
 
-      Promise.all([loadModelsAndMaterialsPromise, loadImagesPromise]).then(([objMatData, imgData]) => {
-        console.log("object and mat data", objMatData);
-        
-
-        const placeHolderImg = imgData[0].placeholder.data;
+      Promise.all([loadModelsAndMaterialsPromise]).then(([objMatData]) => {
+        console.log("object and mat data", objMatData);       
 
         const scene = new siick.Scene();
         const camera = new siick.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1.0, 5000.0);
         const renderer = new siick.Renderer(canvas);
         const geometry = new siick.Cube(0.5, 0.5, 0.5);
 
-
         window.addEventListener('resize', () => {
-          renderer.setSize(window.innerWidth, window.innerHeight);
-        })
-
-        //const materials = [];
-        // const phongMaterial = new siick.PhongMaterial(
-        //   {
-        //     color : [1.0, 0.0, 0.0],
-        //     map: textures[1].rock
-        //   }
-        // );
-
-        //materials.push(phongMaterial);
-
-        //const cube = new siick.Mesh(geometry, phongMaterial);
-        //const cube2 = new siick.Mesh(geometry, phongMaterial);
-
-        // const directionalLight = new siick.DirectionalLight(
-        //   {color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0}
-        // );
+          renderer.setSize(window.innerWidth, window.innerHeight);        
+        });
 
         const pointLight = new siick.PointLight(
           { color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0 , debug: true}
         );
-
-        // FFS separate mesh data and material data here
-        // Create mesh
-
-        // I HAVE ALREADY COMMITTED TO HAVING ONE SHADER!!!!!!
-
-        // Non-material buffers
         // Set up buffers for mesh
         const dieMesh = new siick.Mesh(objMatData[0].objectData);
-        //dieMesh.setupBuffers(objMatData[0]);
+        //const material = new siick.Material(objMatData[0].materialData);
+        dieMesh.attachShader(objMatData[0].materialData);
         
-      
-        // If specified material in obj file, parse it!
-        if (objMatData[0].materialData) {
-          // Set up the uber shader, based on material Data
-          //const material = new siick.Material(objMatData[0].materialData);
-          dieMesh.attachShader(objMatData[0].materialData);
-        } // Otherwise, parse some material seleted by user
-        // else {
-        //   const material = new Material("materials/phong.material");
-        // }
-
-       // const dieMesh2 = new siick.Mesh(objMatData[1].objectData);
-       // dieMesh2.attachShader(objMatData[1].materialData);
-        
-        //const suzanneMesh = new siick.Mesh(objMatData[2].objectData);
-        //suzanneMesh.attachShader(objMatData[2].materialData);
-
-        //die = new siick.Mesh(objMatData[0]);
-
-        
-        
-      
-
-        //dieMesh2.position[0] += 2.0;
-
-
-        //suzanneMesh.position[1] += 1.0;
-
-
-        // Create program and pass material data
-        
-      
         scene.add(dieMesh);
-      
-          
-        //scene.add(suzanneMesh);
-        //scene.add(dieMesh2);
-       
-       // scene.addLight(directionalLight);
-          
-
         scene.add(pointLight);
-        // MUST be called after all objects has been added to scene
-        //renderer.postInitialize(scene);
-
+  
         const fl = new siick.FlyControls(camera);
         const fpsMeter = document.getElementById("fps_meter");
 
