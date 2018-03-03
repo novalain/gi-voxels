@@ -77,7 +77,8 @@ class SimpleShader {
             precision mediump float;
             precision mediump int;
 
-            const int MAX_DIRECTIONAL_LIGHTS = 16;
+            const int MAX_DIRECTIONAL_LIGHTS = 8;
+            const int MAX_POINT_LIGHTS = 8;
 
             layout (std140) uniform sceneMatrices {
                 mat4 viewMatrix;
@@ -89,8 +90,14 @@ class SimpleShader {
                 mat4 normalMatrix;
             };
 
-            struct Directional {
+            struct PointLight {
                 vec3 positionViewSpace;
+                vec4 color;
+                float intensity;
+            };
+
+            struct DirectionalLight {
+                vec3 directionViewSpace;
                 vec4 color;
                 float intensity;
             };
@@ -109,11 +116,16 @@ class SimpleShader {
                 bool displaySpecularMap;
             };
 
-            layout (std140) uniform directionalBuffer {
-                Directional directionalLights[MAX_DIRECTIONAL_LIGHTS];
+            layout (std140) uniform pointLightsBuffer {
+                PointLight pointLights[MAX_POINT_LIGHTS];
+            };
+
+            layout (std140) uniform directionalLightsBuffer {
+                DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
             };
 
             uniform int numLights;
+            uniform int numDirectionalLights;
 
             // Textures
             uniform sampler2D textureMap;
@@ -136,35 +148,50 @@ class SimpleShader {
 
             out vec4 outColor;
 
-            void light(int lightIndex, vec3 vPos, vec3 norm, out vec3 ambient, out vec3 diffuse, out vec3 spec) {
+            void light(int lightIndex, vec3 vPos, vec3 norm, out vec3 ambient, out vec3 diffuse, out vec3 spec, bool directional) {
 
                 // View space
                 vec3 n = norm;
-                vec3 s = directionalLights[lightIndex].positionViewSpace - vPos;
+                vec3 l;
+
+                if (directional) {
+                    l = directionalLights[lightIndex].directionViewSpace;
+                } else {
+                    l = pointLights[lightIndex].positionViewSpace - vPos; // Light dir
+                }
+
                 vec3 v = -vPos;
 
                 if (hasNormalMap) {
                     // Convert from view to tangent space
-                    s = normalize(TBN * s);
+                    l = normalize(TBN * l);
                     v = normalize(TBN * v);
-                    //n = normalize(n);
 
                     vec3 bn = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y)).rgb * 2.0 - 1.0;
                     bn.x *= bumpIntensity;
                     bn.y *= bumpIntensity;
-
-                    // Tangent space to modelview space
                     n = normalize(bn);
                 } else {
-                    s = normalize(s);
+                    l = normalize(l);
                     v = normalize(v);
                     n = normalize(n);
                 }   
 
                 ambient = Ia * mambient.xyz;
-                diffuse = Id * mdiffuse.xyz * max(dot(s,n), 0.0);
-                vec3 r = reflect(-s, n);
-                spec   =  Is * vec3(1.0, 1.0, 1.0) * pow(max(dot(r,v), 0.0), specularExponent);
+
+                diffuse = vec3(0);
+                spec  = vec3(0);
+                float intensity = max(dot(n, l), 0.0);
+                if (intensity > 0.0) {
+                    diffuse = Id * mdiffuse.xyz * intensity;
+
+                    //vec3 r = reflect(-l, n); // phong
+                    vec3 h = normalize(l + v); // blinn phong
+                    
+                    float intSpec = max(dot(h, n), 0.0);
+                    spec = Is * vec3(1.0, 1.0, 1.0) * pow(intSpec, specularExponent);
+                    //spec = Is * vec3(1.0, 1.0, 1.0) * pow(max(dot(r,v), 0.0), specularExponent);
+                }
             } 
         
             void main() {
@@ -174,11 +201,19 @@ class SimpleShader {
                 vec3 ambient, diffuse, spec;
 
                 for (int i = 0; i < numLights; ++i) {
-                    light(i, vPosViewSpace, vNormalViewSpace, ambient, diffuse, spec);
+                    light(i, vPosViewSpace, vNormalViewSpace, ambient, diffuse, spec, /*directional=*/false);
                     ambientSum += ambient;
                     diffuseSum += diffuse;
                     specSum += spec;
-                }             
+                }          
+                
+                for (int i = 0; i < numDirectionalLights; ++i) {
+                    light(i, vPosViewSpace, vNormalViewSpace, ambient, diffuse, spec, /*directional=*/true);
+                    ambientSum += ambient;
+                    diffuseSum += diffuse;
+                    specSum += spec;
+                }          
+
                 ambientSum /= float(numLights);
             
                 if (displayNormalMap && hasNormalMap) {
@@ -210,13 +245,15 @@ class SimpleShader {
     // Keep uniform and attribute locations
     this.programInfo = {
       uniformLocations: {
-        numLights: gl.getUniformLocation(this.program, 'numLights')
-      },
+        numLights: gl.getUniformLocation(this.program, 'numLights'),
+        numDirectionalLights: gl.getUniformLocation(this.program, 'numDirectionalLights')
+    },
       uniformBlockLocations: {
         material: gl.getUniformBlockIndex(this.program, 'materialBuffer'),
         model: gl.getUniformBlockIndex(this.program, 'modelMatrices'),
         scene: gl.getUniformBlockIndex(this.program, 'sceneMatrices'),
-        directional: gl.getUniformBlockIndex(this.program, 'directionalBuffer')
+        pointlights: gl.getUniformBlockIndex(this.program, 'pointLightsBuffer'),
+        directionallights: gl.getUniformBlockIndex(this.program, 'directionalLightsBuffer')
       }
     };
   }

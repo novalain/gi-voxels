@@ -65,6 +65,11 @@
         const pointLight = new siick.PointLight(
           { color: [1.0, 1.0, 1.0, 1.0], intensity: 1.0 , debug: true}
         );
+
+        const directionalLight = new siick.DirectionalLight(
+          { direction: [0.0, -10.0, 0.0, 1.0], intensity: 1.0, debug: true }
+        );
+
         // Set up buffers for mesh
         const dieMesh = new siick.Mesh(objMatData[0].objectData);
         //const material = new siick.Material(objMatData[0].materialData);
@@ -72,6 +77,7 @@
         
         scene.add(dieMesh);
         scene.add(pointLight);
+        //scene.add(directionalLight);
   
         const fl = new siick.FlyControls(camera);
         const fpsMeter = document.getElementById("fps_meter");

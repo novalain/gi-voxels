@@ -9,6 +9,7 @@ import LambertMaterial from './materials/lambertmaterial.js';
 import OrbitControls from './cameras/orbitcontrols.js';
 import FlyControls from './cameras/flycontrols.js';
 import PointLight from './lights/pointlight.js';
+import DirectionalLight from './lights/directionallight.js';
 import ObjectLoader from './utils/objectloader.js';
 import MaterialLoader from './utils/materialloader.js';
 import ResourceLoader from './utils/resourceloader.js';
@@ -56,5 +57,6 @@ export {
   OrbitControls,
   FlyControls,
   PointLight,
+  DirectionalLight,
   ResourceLoader
 };

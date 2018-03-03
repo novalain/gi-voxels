@@ -8,7 +8,6 @@ let context;
 class Renderer {
   constructor(canvas) {
     this._initialize();
-    this.initializedMaterialUBO = false;
   }
 
   _initialize() {
@@ -26,7 +25,8 @@ class Renderer {
         ...mat4.create(), // view
         ...mat4.create(), // projection
     ]);
-    this.directionalUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
+    this.pointLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
+    this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
 
   _renderObject(object, scene, camera) {
@@ -65,7 +65,10 @@ class Renderer {
 
       shader.activate();
       const gl = glContext();
-      gl.uniform1i(programInfo.uniformLocations.numLights, scene.lights.length);
+      
+      gl.uniform1i(programInfo.uniformLocations.numLights, scene.pointLights.length);
+      gl.uniform1i(programInfo.uniformLocations.numDirectionalLights, scene.directionalLights.length);
+
       shader.bindTextures();
       
       // These doesn't change?
@@ -73,7 +76,8 @@ class Renderer {
       gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
       gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
       gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
-      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directional, this.directionalUBO.location);
+      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.pointlights, this.pointLightUBO.location);
+      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directionallights, this.directionalLightUBO.location);
       object.draw(i);
     }
   }
@@ -81,7 +85,8 @@ class Renderer {
   _internalRender(scene, camera) {
     // Bind UBO's, this needs to happen each frame
     this.sceneMatricesUBO.bind();
-    this.directionalUBO.bind();
+    this.pointLightUBO.bind();
+    this.directionalLightUBO.bind();
     this.modelMatricesUBO.bind();
     this.materialUBO.bind(); 
     
@@ -92,13 +97,24 @@ class Renderer {
     ]);
 
     // Update per scene light's UBO
-    for (let i = 0; i < scene.lights.length; i++) {
-      const l = scene.lights[i];
-      this.directionalUBO.update([
-        ...[l.positionViewSpace[0], l.positionViewSpace[1], l.positionViewSpace[2]], // vec4 16 // EQ : CHUNK SIZE SHOULD BE.... CS = TOTALSIZE / ( SIZEOF(FLOAT) ( == 4 ))
+
+    // TODO: Proper padding, it's broken
+    for (let i = 0; i < scene.pointLights.length; i++) {
+      const l = scene.pointLights[i];
+      this.pointLightUBO.update([
+        ...[l.positionViewSpace[0], l.positionViewSpace[1], l.positionViewSpace[2], 0.0],
          ...l.color,  // vec4 16
-         ...[l.intensity, 0.0, 0.0, 0.0] // vec4 16
+         l.intensity // vec4 16
        ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
+    }
+
+    for (let i = 0; i < scene.directionalLights.length; ++i) {
+      const l = scene.directionalLights[i];
+      this.directionalLightUBO.update([
+        ...[l.directionViewSpace[0], l.directionViewSpace[1], l.directionViewSpace[2], 0.0], 
+        ...l.color,  // vec4 16
+        l.intensity // vec4 16
+      ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
 
     // TODO:
@@ -109,7 +125,17 @@ class Renderer {
       this._renderObject(object, scene, camera);
     });
 
-    scene.lights.forEach(light => {
+    scene.pointLights.forEach(light => {
+      if (light._debug) {
+        // calculate MVP
+        const out = mat4.create(); 
+        mat4.multiply(out, camera.viewMatrix, light.modelMatrix);
+        mat4.multiply(out, camera.projectionMatrix, out);
+        light.draw(out);
+      }
+    })
+
+    scene.directionalLights.forEach(light => {
       if (light._debug) {
         // calculate MVP
         const out = mat4.create();
