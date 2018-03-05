@@ -24,6 +24,11 @@ class PerspectiveCamera extends Object {
     this.updateProjectionMatrix();
   }
 
+  setFov(fov) {
+    this.fov = fov;
+    this.updateProjectionMatrix();
+  }
+
   setTarget(dir) {
     vec3.copy(this.target, dir);
   }
