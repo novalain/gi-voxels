@@ -225,7 +225,6 @@ class ObjectLoader {
                 tangents: mesh.tangents,
                 bitangents: mesh.bitangents,
                 indices: mesh.indices,
-                indicesByMaterial : mesh.vertexBuffersByMaterialIndex,
                 uvs: generateUVs ? generateVertexUVs(mesh.vertices) : mesh.textures,
               },
               materialData : {

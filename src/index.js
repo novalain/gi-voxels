@@ -11,7 +11,7 @@ import FlyControls from './cameras/flycontrols.js';
 import PointLight from './lights/pointlight.js';
 import DirectionalLight from './lights/directionallight.js';
 import ObjectLoader from './utils/objectloader.js';
-import MaterialLoader from './utils/materialloader.js';
+//import MaterialLoader from './utils/materialloader.js';
 import ResourceLoader from './utils/resourceloader.js';
 
 // TODO MOVE
@@ -51,7 +51,7 @@ export {
   Sphere,
   Mesh,
   Scene,
-  MaterialLoader,
+  //MaterialLoader,
   PerspectiveCamera,
   BasicMaterial,
   OrbitControls,

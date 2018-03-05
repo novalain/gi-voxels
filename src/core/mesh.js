@@ -16,8 +16,8 @@ class Mesh extends Entity {
 
     this._shaders = [];
     //this._indexCount = geometry.indices.length;
-    for (let i = 0; i < geometry.indicesByMaterial.length; ++i) {
-      this._indexCounts.push(geometry.indicesByMaterial[i].length);
+    for (let i = 0; i < geometry.indices.length; ++i) {
+      this._indexCounts.push(geometry.indices[i].length);
     }
     this._buffers = this._initializeBuffers();
   }
@@ -42,7 +42,7 @@ class Mesh extends Entity {
     const gl = glContext();
 
     this._vaos = [];
-    for (let i = 0; i < geometry.indicesByMaterial.length; ++i) {
+    for (let i = 0; i < geometry.indices.length; ++i) {
       this._vaos.push(gl.createVertexArray());
       gl.bindVertexArray(this._vaos[i]);
 
@@ -133,7 +133,7 @@ class Mesh extends Entity {
       
       const indexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(geometry.indicesByMaterial[i]), gl.STATIC_DRAW);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(geometry.indices[i]), gl.STATIC_DRAW);
     }  
   }
 

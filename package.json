@@ -5,7 +5,7 @@
   "main": "lib/siick-engine.js",
   "scripts": {
     "build": "webpack --env build",
-    "dev" : "start http://localhost:8000/ & webpack-dev-server --env dev --progress --colors --watch"
+    "dev": "start http://localhost:8000/ & webpack-dev-server --env dev --progress --colors --watch"
   },
   "keywords": [
     "webgl2",
@@ -14,10 +14,8 @@
   "author": "Michael Novén",
   "license": "MIT",
   "devDependencies": {
-    "obj-mtl-loader": "0.0.5",
-    "three-fly-controls": "^1.1.0",
+    "webgl-obj-loader": "novalain/webgl-obj-loader",
     "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
-    "webgl-obj-loader": "^1.0.0",
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.8.2",
     "yargs": "^10.0.3"
