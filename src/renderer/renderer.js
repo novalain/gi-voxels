@@ -20,12 +20,12 @@ class Renderer {
         ...mat4.create(), // model
         ...mat4.create(), // normal 
     ]);
-
+    this.guiUBO = new UniformBufferObject(new Float32Array(500));
     this.sceneMatricesUBO = new UniformBufferObject([
         ...mat4.create(), // view
         ...mat4.create(), // projection
     ]);
-    this.pointLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
+    this.pointLightUBO = new UniformBufferObject(new Float32Array(    Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
 
@@ -45,26 +45,18 @@ class Renderer {
     const program = material.program;
     const programInfo = material.programInfo;
     const materialData = material.materialData;
-    const displayBump = scene.gui.displayBump;
-    const textureLod = scene.gui.diffuseLod;
-    const bumpIntensity = scene.gui.bumpIntensity;
 
     // Have to pad stuff
     this.materialUBO.update([
-      ...[...materialData.ambient, 0.0], // vec3 16  0
+      ...[...materialData.ambient, 0.0], // vec3 16  0 
       ...[...materialData.diffuse, 0.0], // vec3 16  16
       // ...[...materialData.emissive, 0.0], // vec3 16 32
       ...[...materialData.specular, 0.0], // vec3 16  48
       materialData.specularExponent, // 4, 64
-      bumpIntensity, // 4, 68
       Boolean(materialData.mapDiffuse),  // 4, 72
       Boolean(materialData.mapBump), //4, 76
       Boolean(materialData.mapSpecular),
-      Boolean(materialData.mapDissolve),
-      // UI global data really.. does not belong here
-      displayBump,
-      scene.gui.displaySpecular,
-      textureLod
+      Boolean(materialData.mapDissolve)
     ]); // Real chunk size here
 
     material.activate();
@@ -74,6 +66,7 @@ class Renderer {
     material.bindTextures();
     
     // Set the uniform block binding for the active program
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.gui, this.guiUBO.location);
     gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
     gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
     gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
@@ -129,6 +122,18 @@ class Renderer {
     this.directionalLightUBO.bind();
     this.modelMatricesUBO.bind();
     this.materialUBO.bind(); 
+    this.guiUBO.bind();
+
+    const displayBump = scene.gui.displayBump;
+    const textureLod = scene.gui.diffuseLod;
+    const bumpIntensity = scene.gui.bumpIntensity;
+
+    this.guiUBO.update([
+      scene.gui.diffuseLod,
+      scene.gui.bumpIntensity,
+      scene.gui.displayBump,
+      scene.gui.displaySpecular
+    ]);
     
     // Update per scene ubos
     this.sceneMatricesUBO.update([

@@ -113,14 +113,10 @@ class Material {
                 //vec4 memissive; // 16 32
                 vec4 mspecular; // 16 32
                 float specularExponent; // 4 48
-                float bumpIntensity; // 4 52
                 bool hasDiffuseMap; // 4 56
                 bool hasNormalMap; // 4 60
                 bool hasSpecularMap; // 4 64
                 bool hasDissolveMap; // 4 64
-                bool displayNormalMap; // 4 68
-                bool displaySpecularMap;
-                float texLod;
             };
 
             layout (std140) uniform pointLightsBuffer {
@@ -129,6 +125,13 @@ class Material {
 
             layout (std140) uniform directionalLightsBuffer {
                 DirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
+            };
+
+            layout (std140) uniform guiDataBuffer {
+                float texLod;
+                float bumpIntensity;
+                bool displayNormalMap;
+                bool displaySpecularMap;
             };
 
             uniform int numLights;
@@ -262,13 +265,14 @@ class Material {
         numLights: gl.getUniformLocation(this.program, 'numLights'),
         numDirectionalLights: gl.getUniformLocation(this.program, 'numDirectionalLights')
     },
-      uniformBlockLocations: {
-        material: gl.getUniformBlockIndex(this.program, 'materialBuffer'),
-        model: gl.getUniformBlockIndex(this.program, 'modelMatrices'),
-        scene: gl.getUniformBlockIndex(this.program, 'sceneMatrices'),
-        pointlights: gl.getUniformBlockIndex(this.program, 'pointLightsBuffer'),
-        directionallights: gl.getUniformBlockIndex(this.program, 'directionalLightsBuffer')
-      }
+        uniformBlockLocations: {
+            material: gl.getUniformBlockIndex(this.program, 'materialBuffer'),
+            model: gl.getUniformBlockIndex(this.program, 'modelMatrices'),
+            scene: gl.getUniformBlockIndex(this.program, 'sceneMatrices'),
+            pointlights: gl.getUniformBlockIndex(this.program, 'pointLightsBuffer'),
+            directionallights: gl.getUniformBlockIndex(this.program, 'directionalLightsBuffer'),
+            gui: gl.getUniformBlockIndex(this.program, 'guiDataBuffer')
+        }
     };
   }
 
