@@ -62,10 +62,6 @@
         const geometry = new siick.Cube(0.5, 0.5, 0.5);
 
         // 1. Create orthographic camera, align viewport with scene
-
-
-
-
         window.addEventListener('resize', () => {
           renderer.setSize(window.innerWidth, window.innerHeight);        
         });
@@ -79,11 +75,19 @@
         );
 
         // Set up buffers for mesh
-        const dieMesh = new siick.Mesh(objMatData[0].objectData);
+        //const dieMesh = new siick.Mesh(objMatData[0].objectData);
+        const objData = objMatData[0];
+        for (let i = 0; i < objData.indices.length; ++i) {
+          const mesh = new siick.Mesh(objData.objectData, objData.indices[i]); // Set up all buffers
+          const material = new siick.Material(objData.materialData.materialsByIndex[i]);
+          mesh.setMaterial(material);
+          scene.add(mesh);
+        }
+
         //const material = new siick.Material(objMatData[0].materialData);
-        dieMesh.attachShader(objMatData[0].materialData);
+        //dieMesh.attachShader(objMatData[0].materialData);
         
-        scene.add(dieMesh);
+        // scene.add(dieMesh);
         scene.add(pointLight);
         //scene.add(directionalLight);
   

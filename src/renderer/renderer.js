@@ -29,7 +29,8 @@ class Renderer {
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
 
-  _renderObject(object, scene, camera) {
+  // Render with current material
+  _renderObjectWithPrimaryMaterial(object, scene, camera) {
     // Calculate normal matrix
     // Per object    
     // Bind Uniform buffer object
@@ -39,68 +40,49 @@ class Renderer {
     ]);
     
     // Per material
-    for (let i = 0; i < object.shaders.length; ++i) {
-      const shader = object.shaders[i];
-      const program = shader.program;
-      const programInfo = shader.programInfo;
-      const materialData = shader.materialData;
-      const displayBump = scene.gui.displayBump;
-      const textureLod = scene.gui.diffuseLod;
-      const bumpIntensity = scene.gui.bumpIntensity;
+    //for (let i = 0; i < object.shaders.length; ++i) {
+    const material = object._material;
+    const program = material.program;
+    const programInfo = material.programInfo;
+    const materialData = material.materialData;
+    const displayBump = scene.gui.displayBump;
+    const textureLod = scene.gui.diffuseLod;
+    const bumpIntensity = scene.gui.bumpIntensity;
 
-      // Have to pad stuff
-      this.materialUBO.update([
-        ...[...materialData.ambient, 0.0], // vec3 16  0
-        ...[...materialData.diffuse, 0.0], // vec3 16  16
-       // ...[...materialData.emissive, 0.0], // vec3 16 32
-        ...[...materialData.specular, 0.0], // vec3 16  48
-        materialData.specularExponent, // 4, 64
-        bumpIntensity, // 4, 68
-        Boolean(materialData.mapDiffuse),  // 4, 72
-        Boolean(materialData.mapBump), //4, 76
-        Boolean(materialData.mapSpecular),
-        Boolean(materialData.mapDissolve),
-        // UI global data really.. does not belong here
-        displayBump,
-        scene.gui.displaySpecular,
-        textureLod
-      ]); // Real chunk size here
+    // Have to pad stuff
+    this.materialUBO.update([
+      ...[...materialData.ambient, 0.0], // vec3 16  0
+      ...[...materialData.diffuse, 0.0], // vec3 16  16
+      // ...[...materialData.emissive, 0.0], // vec3 16 32
+      ...[...materialData.specular, 0.0], // vec3 16  48
+      materialData.specularExponent, // 4, 64
+      bumpIntensity, // 4, 68
+      Boolean(materialData.mapDiffuse),  // 4, 72
+      Boolean(materialData.mapBump), //4, 76
+      Boolean(materialData.mapSpecular),
+      Boolean(materialData.mapDissolve),
+      // UI global data really.. does not belong here
+      displayBump,
+      scene.gui.displaySpecular,
+      textureLod
+    ]); // Real chunk size here
 
-      shader.activate();
-      const gl = glContext();
-      
-      gl.uniform1i(programInfo.uniformLocations.numLights, scene.pointLights.length);
-      gl.uniform1i(programInfo.uniformLocations.numDirectionalLights, scene.directionalLights.length);
-
-      shader.bindTextures();
-      
-      // These doesn't change?
-      // Needs to happen per active bound shader
-      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
-      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
-      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
-      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.pointlights, this.pointLightUBO.location);
-      gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directionallights, this.directionalLightUBO.location);
-      object.draw(i);
-    }
+    material.activate();
+    const gl = glContext();
+    gl.uniform1i(programInfo.uniformLocations.numLights, scene.pointLights.length);
+    gl.uniform1i(programInfo.uniformLocations.numDirectionalLights, scene.directionalLights.length);
+    material.bindTextures();
+    
+    // Set the uniform block binding for the active program
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.pointlights, this.pointLightUBO.location);
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directionallights, this.directionalLightUBO.location);
+    object.draw();
   }
 
-  _internalRender(scene, camera) {
-    // Bind UBO's, this needs to happen each frame
-    this.sceneMatricesUBO.bind();
-    this.pointLightUBO.bind();
-    this.directionalLightUBO.bind();
-    this.modelMatricesUBO.bind();
-    this.materialUBO.bind(); 
-    
-    // Update per scene ubos
-    this.sceneMatricesUBO.update([
-      ...camera.viewMatrix,
-      ...camera.projectionMatrix
-    ]);
-
-    // Update per scene light's UBO
-
+  _uploadLightning(scene, camera) {
     // TODO: Proper padding, it's broken
     for (let i = 0; i < scene.pointLights.length; i++) {
       const l = scene.pointLights[i];
@@ -119,15 +101,6 @@ class Renderer {
         l.intensity // vec4 16
       ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
-
-    // TODO:
-    //1. Front to back for opaque
-    //2. Batch together materials
-    //3. Back to front for transparent
-    scene.objects.forEach(object => {
-      this._renderObject(object, scene, camera);
-    });
-
     scene.pointLights.forEach(light => {
       if (light._debug) {
         // calculate MVP
@@ -147,6 +120,36 @@ class Renderer {
         light.draw(out);
       }
     })
+  }
+
+  _internalRender(scene, camera) {
+    // Bind UBO's, this needs to happen each frame
+    this.sceneMatricesUBO.bind();
+    this.pointLightUBO.bind();
+    this.directionalLightUBO.bind();
+    this.modelMatricesUBO.bind();
+    this.materialUBO.bind(); 
+    
+    // Update per scene ubos
+    this.sceneMatricesUBO.update([
+      ...camera.viewMatrix,
+      ...camera.projectionMatrix
+    ]);
+
+    // Update per scene light's UBO
+
+    this._uploadLightning(scene, camera);
+    
+
+    // TODO:
+    //1. Front to back for opaque
+    //2. Batch together materials
+    //3. Back to front for transparent
+    scene.objects.forEach(object => {
+      this._renderObjectWithPrimaryMaterial(object, scene, camera);
+    });
+
+   
   }
 
   setSize(width, height) {

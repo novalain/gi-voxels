@@ -224,7 +224,6 @@ class ObjectLoader {
                 normals: generateNormals ? generateVertexNormals(mesh.vertices, mesh.indices) : mesh.vertexNormals,
                 tangents: mesh.tangents,
                 bitangents: mesh.bitangents,
-                indices: mesh.indices,
                 uvs: generateUVs ? generateVertexUVs(mesh.vertices) : mesh.textures,
               },
               materialData : {
@@ -232,7 +231,8 @@ class ObjectLoader {
                 materialIndices: mesh.materialIndices,
                 materialNames: mesh.materialNames,
                 materialsByIndex: mesh.materialsByIndex,
-              }
+              },
+              indices: mesh.indices
             };
             resObjectArray.push(res);
           });

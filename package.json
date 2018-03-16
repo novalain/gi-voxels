@@ -14,7 +14,7 @@
   "author": "Michael Novén",
   "license": "MIT",
   "devDependencies": {
-    "webgl-obj-loader": "novalain/webgl-obj-loader",
+    "webgl-obj-loader": "novalain/webgl-obj-loader#d41f51cd63f459f1b62179eff45d267e0337bf7c",
     "uglifyjs-webpack-plugin": "^1.0.0-beta.2",
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.8.2",
