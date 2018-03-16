@@ -57,8 +57,14 @@
 
         const scene = new siick.Scene();
         const camera = new siick.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1.0, 5000.0);
+        //const camera = new siick.OrthographicCamera(-120, 120, -120, 120, -500, 500);
         const renderer = new siick.Renderer(canvas);
         const geometry = new siick.Cube(0.5, 0.5, 0.5);
+
+        // 1. Create orthographic camera, align viewport with scene
+
+
+
 
         window.addEventListener('resize', () => {
           renderer.setSize(window.innerWidth, window.innerHeight);        
@@ -78,8 +84,8 @@
         dieMesh.attachShader(objMatData[0].materialData);
         
         scene.add(dieMesh);
-        //scene.add(pointLight);
-        scene.add(directionalLight);
+        scene.add(pointLight);
+        //scene.add(directionalLight);
   
         const fl = new siick.FlyControls(camera);
         const fpsMeter = document.getElementById("fps_meter");
