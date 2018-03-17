@@ -1,6 +1,7 @@
 import Scene from '../core/scene.js'
 import { vec3, mat3, mat4, quat, vec4 } from 'gl-matrix';
 import UniformBufferObject from '../utils/ubo.js';
+import OrthographicCamera from '../cameras/orthographiccamera.js'
 
 // TODO: Remove global
 let context;
@@ -13,6 +14,9 @@ class Renderer {
   _initialize() {
     //this.ratio = global.devicePixelRatio;
     context = canvas.getContext('webgl2', {antialias: false});
+
+    let gl = glContext();
+    console.log("amx draw buffers", gl.getParameter(gl.MAX_DRAW_BUFFERS));
 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
@@ -28,6 +32,84 @@ class Renderer {
     this.pointLightUBO = new UniformBufferObject(new Float32Array(    Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   }
+
+  initializeVoxelization() {
+    const gl = glContext();
+    
+    // Initialize 3d texture
+    this.voxelTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, 64, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.generateMipmap(gl.TEXTURE_3D);
+
+    // Initialize projection matrices
+    const orthoCamera = new OrthographicCamera(-1500, 1500, -1500, 1500, -1500, 4500);
+    orthoCamera.position = vec3.fromValues(3000, 0, 0);
+    const origin = vec4.fromValues(0.0, 0.0, 0.0);
+    orthoCamera.lookAt(origin);
+
+    const projX = mat4.create();
+    mat4.multiply(projX, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+    this.voxelizationShader = new VoxelizationShader();
+
+    //framebufferTextureLayer
+    const fb = gl.createFrameBuffer();
+    gl.bindFrameBuffer(gl.FRAMEBUFFER, fb);
+    //gl.frameBufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_0, gl.TEXTURE_2D,  )
+
+    // Render to mip 0, we generate mipmaps after we're done
+    void gl.drawBuffers([
+      gl.COLOR_ATTACHMENT_0,
+      gl.COLOR_ATTACHMENT_1,
+      gl.COLOR_ATTACHMENT_2,
+      gl.COLOR_ATTACHMENT_4,
+      gl.COLOR_ATTACHMENT_5,
+      gl.COLOR_ATTACHMENT_6,
+      gl.COLOR_ATTACHMENT_7,
+      gl.COLOR_ATTACHMENT_8
+    ]);
+    
+    const program = this.voxelizationShader.program;
+    // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
+    for (let i = 0; i < (64 / 8); i+=8) {
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_0, voxelTexture, 0, i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_1, voxelTexture, 0, i + 1);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_2, voxelTexture, 0, i + 2);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_3, voxelTexture, 0, i + 3);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_4, voxelTexture, 0, i + 4);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_5, voxelTexture, 0, i + 5);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_6, voxelTexture, 0, i + 6);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_7, voxelTexture, 0, i + 7);
+      gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), i);
+    }
+
+
+    gl.bindFrameBuffer(gl.FRAMEBUFFER, 0);
+
+
+  }
+
+  // voxelizeScene() {
+  //   // glDisable(GL_CULL_FACE);
+  //   // glDisable(GL_DEPTH_TEST);
+
+  //   gl.viewport(0, 0, 512, 512);
+  //   gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  //   gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
+  //   this.voxelizationShader.activate();
+  //   // Set uniforms
+  //   //this.voxelizationShader.setUniform("");
+
+  //   // Bind single level ... 
+
+
+  //   // Render scene
+
+  //   // Generate mipmaps on the 3D texture ...
+
+  // }
 
   // Render with current material
   _renderObjectWithPrimaryMaterial(object, scene, camera) {
@@ -142,10 +224,8 @@ class Renderer {
     ]);
 
     // Update per scene light's UBO
-
     this._uploadLightning(scene, camera);
     
-
     // TODO:
     //1. Front to back for opaque
     //2. Batch together materials
@@ -153,8 +233,6 @@ class Renderer {
     scene.objects.forEach(object => {
       this._renderObjectWithPrimaryMaterial(object, scene, camera);
     });
-
-   
   }
 
   setSize(width, height) {
