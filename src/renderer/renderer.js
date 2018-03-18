@@ -3,6 +3,7 @@ import { vec3, mat3, mat4, quat, vec4 } from 'gl-matrix';
 import UniformBufferObject from '../utils/ubo.js';
 import OrthographicCamera from '../cameras/orthographiccamera.js'
 import StandardShader from '../materials/standardshader.js'
+import VoxelizationShader from '../materials/voxelizationshader.js'
 
 // TODO: Remove global
 let context;
@@ -19,6 +20,7 @@ class Renderer {
     let gl = glContext();
     console.log("amx draw buffers", gl.getParameter(gl.MAX_DRAW_BUFFERS));
 
+    this.voxelize = true;
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
     // With this declaration - does not work to put in float in here
@@ -33,6 +35,12 @@ class Renderer {
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   
     this.standardShader = new StandardShader();
+    // var ext = gl.getExtension('WEBGL_draw_buffers');
+    // if (!ext) {
+    //   console.log("ASDASDASD WARNING");
+    // }
+    this.voxelizationShader = new VoxelizationShader();
+    this.initializeVoxelization();
 
     this.sceneUBO.bind();
     this.pointLightUBO.bind();
@@ -60,94 +68,73 @@ class Renderer {
     orthoCamera.lookAt(origin);
     this.projZ = mat4.create();
     mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
-    this.voxelizationMaterial = new VoxelizationMaterial();
   }
 
-  voxelizeScene() {
+  voxelizeScene(scene, camera) {
+
+    const gl = glContext();
+    gl.viewport(0, 0, 64, 64);
+    gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
     // glDisable(GL_CULL_FACE);
     // glDisable(GL_DEPTH_TEST);
-
-    gl.viewport(0, 0, 512, 512);
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-   // this.voxelizationMaterial.activate();
-    const program = this.voxelizationMaterial.program;
-
-    this._uploadLightning();
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.pointlights, this.pointLightUBO.location);
-
-
-    gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
-    //framebufferTextureLayer
-    const fb = gl.createFrameBuffer();
-    gl.bindFrameBuffer(gl.FRAMEBUFFER, fb);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
     //gl.frameBufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_0, gl.TEXTURE_2D,  )
 
-    // Render to mip 0, we generate mipmaps after we're done
-    void gl.drawBuffers([
-      gl.COLOR_ATTACHMENT_0,
-      gl.COLOR_ATTACHMENT_1,
-      gl.COLOR_ATTACHMENT_2,
-      gl.COLOR_ATTACHMENT_4,
-      gl.COLOR_ATTACHMENT_5,
-      gl.COLOR_ATTACHMENT_6,
-      gl.COLOR_ATTACHMENT_7,
-      gl.COLOR_ATTACHMENT_8
-    ]);
-
+  
+    this.voxelizationShader.activate();
+    const program = this.voxelizationShader.program;
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
     // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
-    for (let i = 0; i < (64 / 8); i += 8) {
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_0, voxelTexture, 0, i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_1, voxelTexture, 0, i + 1);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_2, voxelTexture, 0, i + 2);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_3, voxelTexture, 0, i + 3);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_4, voxelTexture, 0, i + 4);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_5, voxelTexture, 0, i + 5);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_6, voxelTexture, 0, i + 6);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_7, voxelTexture, 0, i + 7);
-      gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), i);
+    for (let i = 0; i < 64; i += 8) {
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, 0);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, this.voxelTexture, 0, 1);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT2, this.voxelTexture, 0, 2);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT3, this.voxelTexture, 0, 3);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT4, this.voxelTexture, 0, 4);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT5, this.voxelTexture, 0, 5);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT6, this.voxelTexture, 0, 6);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, 7);
+
+      // Can move up?
+      // Render to mip 0, we generate mipmaps after we're done
+      gl.drawBuffers([
+        gl.COLOR_ATTACHMENT0,
+        gl.COLOR_ATTACHMENT1,
+        gl.COLOR_ATTACHMENT2,
+        gl.COLOR_ATTACHMENT3,
+        gl.COLOR_ATTACHMENT4,
+        gl.COLOR_ATTACHMENT5,
+        gl.COLOR_ATTACHMENT6,
+        gl.COLOR_ATTACHMENT7,
+      ]);
+
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+        alert("FBO is not complete");
+      }
+
+      // Set uniforms
+      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+      gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), 0);
+    
+      // Render scene
+      scene.objects.forEach(object => {
+        this._renderObject(object, scene, camera, program, false);
+      });
     }
     
-    gl.uniform1i(gl.getUniformLocation(program, 'numLights'), scene.pointLights.length);
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneMatrices'), this.sceneUBO.location);
-    // Render scene
-    scene.objects.forEach(object => {
-      this._renderObject(program, object, scene, camera);
-    });
     
-    gl.bindFrameBuffer(gl.FRAMEBUFFER, 0);
-  }
-
-  _renderObjectWithProgram(program, object, scene, camera) {
-    const gl = glContext();
-
-    const materialData = object._material.materialData;
-
-    // Update objects model matrices
-    this.modelMatricesUBO.update([
-      ...object.modelMatrix,
-      ...object.normalMatrix
-    ]);
+    // Clean state
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     
-    // Update material UBO
-    this.materialUBO.update([
-      ...[...materialData.ambient, 0.0], // vec3 16  0 
-      ...[...materialData.diffuse, 0.0], // vec3 16  16
-      // ...[...materialData.emissive, 0.0], // vec3 16 32
-      ...[...materialData.specular, 0.0], // vec3 16  48
-      materialData.specularExponent, // 4, 64
-      Boolean(materialData.mapDiffuse),  // 4, 72
-      Boolean(materialData.mapBump), //4, 76
-      Boolean(materialData.mapSpecular),
-      Boolean(materialData.mapDissolve)
-    ]); // Real chunk size here
-
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'materialBuffer'), this.materialUBO.location);
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'modelMatrices'), this.modelMatricesUBO.location);
-    object.draw();
+   //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canva
   }
   
-  _renderObject(object, scene, camera) {
+  _renderObject(object, scene, camera, program, uploadTextures = true) {
     this.modelMatricesUBO.update([
       ...object.modelMatrix,
       ...object.normalMatrix
@@ -169,9 +156,11 @@ class Renderer {
 
     const gl = glContext();
   
-    gl.uniformBlockBinding(this.standardShader.program, gl.getUniformBlockIndex(this.standardShader.program, 'materialBuffer'), this.materialUBO.location);
-    gl.uniformBlockBinding(this.standardShader.program, gl.getUniformBlockIndex(this.standardShader.program, 'modelMatrices'), this.modelMatricesUBO.location);
-    object.uploadTextures(this.standardShader.program);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'materialBuffer'), this.materialUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'modelMatrices'), this.modelMatricesUBO.location);
+    if (uploadTextures) {
+      object.uploadTextures(program);
+    }
     object.draw();
   }
 
@@ -228,7 +217,7 @@ class Renderer {
       scene.gui.displayBump,
       scene.gui.displaySpecular
     ]);
-    
+
     // TODO: Why doens't integers work? Float32Array??
     this.sceneUBO.update([
       ...camera.viewMatrix, // Starts at multiple of base
@@ -238,6 +227,11 @@ class Renderer {
     ]);
 
     this._uploadLightning(scene, camera);
+
+    if (this.voxelize) {
+      this.voxelizeScene(scene, camera);
+      this.voxelize = false;
+    }
   
     // TODO:
     //1. Front to back for opaque
@@ -254,7 +248,7 @@ class Renderer {
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
     // Render scene normal
     scene.objects.forEach(object => {
-      this._renderObject(object, scene, camera);
+      this._renderObject(object, scene, camera, program);
     });
   }
 
@@ -273,8 +267,8 @@ class Renderer {
     const gl = glContext();
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clearDepth(1.0); 
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clearDepth(1.0);  // TODO remove
 
     gl.cullFace(gl.BACK);
     gl.enable(gl.CULL_FACE);
