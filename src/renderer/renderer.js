@@ -2,6 +2,7 @@ import Scene from '../core/scene.js'
 import { vec3, mat3, mat4, quat, vec4 } from 'gl-matrix';
 import UniformBufferObject from '../utils/ubo.js';
 import OrthographicCamera from '../cameras/orthographiccamera.js'
+import StandardShader from '../materials/standardshader.js'
 
 // TODO: Remove global
 let context;
@@ -20,17 +21,25 @@ class Renderer {
 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
+    // With this declaration - does not work to put in float in here
     this.modelMatricesUBO = new UniformBufferObject([
         ...mat4.create(), // model
         ...mat4.create(), // normal 
     ]);
     this.guiUBO = new UniformBufferObject(new Float32Array(500));
-    this.sceneMatricesUBO = new UniformBufferObject([
-        ...mat4.create(), // view
-        ...mat4.create(), // projection
-    ]);
-    this.pointLightUBO = new UniformBufferObject(new Float32Array(    Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
+    this.sceneUBO = new UniformBufferObject(new Float32Array(400));
+   // this.pointLightUBO = new UniformBufferObject(new Float32Array(500));
+    this.pointLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
+  
+    this.standardShader = new StandardShader();
+
+    this.sceneUBO.bind();
+    this.pointLightUBO.bind();
+    this.directionalLightUBO.bind();
+    this.modelMatricesUBO.bind();
+    this.materialUBO.bind();
+    this.guiUBO.bind();
   }
 
   initializeVoxelization() {
@@ -46,14 +55,29 @@ class Renderer {
 
     // Initialize projection matrices
     const orthoCamera = new OrthographicCamera(-1500, 1500, -1500, 1500, -1500, 4500);
-    orthoCamera.position = vec3.fromValues(3000, 0, 0);
+    orthoCamera.position = vec3.fromValues(0, 0, 3000);
     const origin = vec4.fromValues(0.0, 0.0, 0.0);
     orthoCamera.lookAt(origin);
+    this.projZ = mat4.create();
+    mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+    this.voxelizationMaterial = new VoxelizationMaterial();
+  }
 
-    const projX = mat4.create();
-    mat4.multiply(projX, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
-    this.voxelizationShader = new VoxelizationShader();
+  voxelizeScene() {
+    // glDisable(GL_CULL_FACE);
+    // glDisable(GL_DEPTH_TEST);
 
+    gl.viewport(0, 0, 512, 512);
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
+   // this.voxelizationMaterial.activate();
+    const program = this.voxelizationMaterial.program;
+
+    this._uploadLightning();
+    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.pointlights, this.pointLightUBO.location);
+
+
+    gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
     //framebufferTextureLayer
     const fb = gl.createFrameBuffer();
     gl.bindFrameBuffer(gl.FRAMEBUFFER, fb);
@@ -70,10 +94,9 @@ class Renderer {
       gl.COLOR_ATTACHMENT_7,
       gl.COLOR_ATTACHMENT_8
     ]);
-    
-    const program = this.voxelizationShader.program;
+
     // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
-    for (let i = 0; i < (64 / 8); i+=8) {
+    for (let i = 0; i < (64 / 8); i += 8) {
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_0, voxelTexture, 0, i);
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_1, voxelTexture, 0, i + 1);
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_2, voxelTexture, 0, i + 2);
@@ -84,51 +107,29 @@ class Renderer {
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_7, voxelTexture, 0, i + 7);
       gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), i);
     }
-
-
+    
+    gl.uniform1i(gl.getUniformLocation(program, 'numLights'), scene.pointLights.length);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneMatrices'), this.sceneUBO.location);
+    // Render scene
+    scene.objects.forEach(object => {
+      this._renderObject(program, object, scene, camera);
+    });
+    
     gl.bindFrameBuffer(gl.FRAMEBUFFER, 0);
-
-
   }
 
-  // voxelizeScene() {
-  //   // glDisable(GL_CULL_FACE);
-  //   // glDisable(GL_DEPTH_TEST);
+  _renderObjectWithProgram(program, object, scene, camera) {
+    const gl = glContext();
 
-  //   gl.viewport(0, 0, 512, 512);
-  //   gl.clearColor(1.0, 1.0, 1.0, 1.0);
-  //   gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-  //   this.voxelizationShader.activate();
-  //   // Set uniforms
-  //   //this.voxelizationShader.setUniform("");
+    const materialData = object._material.materialData;
 
-  //   // Bind single level ... 
-
-
-  //   // Render scene
-
-  //   // Generate mipmaps on the 3D texture ...
-
-  // }
-
-  // Render with current material
-  _renderObjectWithPrimaryMaterial(object, scene, camera) {
-    // Calculate normal matrix
-    // Per object    
-    // Bind Uniform buffer object
+    // Update objects model matrices
     this.modelMatricesUBO.update([
       ...object.modelMatrix,
       ...object.normalMatrix
     ]);
     
-    // Per material
-    //for (let i = 0; i < object.shaders.length; ++i) {
-    const material = object._material;
-    const program = material.program;
-    const programInfo = material.programInfo;
-    const materialData = material.materialData;
-
-    // Have to pad stuff
+    // Update material UBO
     this.materialUBO.update([
       ...[...materialData.ambient, 0.0], // vec3 16  0 
       ...[...materialData.diffuse, 0.0], // vec3 16  16
@@ -141,19 +142,36 @@ class Renderer {
       Boolean(materialData.mapDissolve)
     ]); // Real chunk size here
 
-    material.activate();
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'materialBuffer'), this.materialUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'modelMatrices'), this.modelMatricesUBO.location);
+    object.draw();
+  }
+  
+  _renderObject(object, scene, camera) {
+    this.modelMatricesUBO.update([
+      ...object.modelMatrix,
+      ...object.normalMatrix
+    ]);
+  
+    const materialData = object.materialData;
+    // Different between objects
+    this.materialUBO.update([
+      ...[...materialData.ambient, 0.0], // vec3 16  0 
+      ...[...materialData.diffuse, 0.0], // vec3 16  16
+      // ...[...materialData.emissive, 0.0], // vec3 16 32
+      ...[...materialData.specular, 0.0], // vec3 16  48
+      materialData.specularExponent, // 4, 64
+      Boolean(materialData.mapDiffuse),  // 4, 72
+      Boolean(materialData.mapBump), //4, 76
+      Boolean(materialData.mapSpecular),
+      Boolean(materialData.mapDissolve)
+    ]); // Real chunk size here
+
     const gl = glContext();
-    gl.uniform1i(programInfo.uniformLocations.numLights, scene.pointLights.length);
-    gl.uniform1i(programInfo.uniformLocations.numDirectionalLights, scene.directionalLights.length);
-    material.bindTextures();
-    
-    // Set the uniform block binding for the active program
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.gui, this.guiUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.material, this.materialUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.scene, this.sceneMatricesUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.model, this.modelMatricesUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.pointlights, this.pointLightUBO.location);
-    gl.uniformBlockBinding(program, programInfo.uniformBlockLocations.directionallights, this.directionalLightUBO.location);
+  
+    gl.uniformBlockBinding(this.standardShader.program, gl.getUniformBlockIndex(this.standardShader.program, 'materialBuffer'), this.materialUBO.location);
+    gl.uniformBlockBinding(this.standardShader.program, gl.getUniformBlockIndex(this.standardShader.program, 'modelMatrices'), this.modelMatricesUBO.location);
+    object.uploadTextures(this.standardShader.program);
     object.draw();
   }
 
@@ -176,10 +194,16 @@ class Renderer {
         l.intensity // vec4 16
       ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
+    //const gl = glContext();
+    //gl.uniform1i(gl.getUniformLocation(this.standardShader.program, 'numLights'), scene.pointLights.length);
+    //gl.uniform1i(gl.getUniformLocation(this.standardShader.program, 'numDirectionalLights'), scene.directionalLights.length);
+  }
+
+  _debugLightning(scene, camera) {
     scene.pointLights.forEach(light => {
       if (light._debug) {
         // calculate MVP
-        const out = mat4.create(); 
+        const out = mat4.create();
         mat4.multiply(out, camera.viewMatrix, light.modelMatrix);
         mat4.multiply(out, camera.projectionMatrix, out);
         light.draw(out);
@@ -198,18 +222,6 @@ class Renderer {
   }
 
   _internalRender(scene, camera) {
-    // Bind UBO's, this needs to happen each frame
-    this.sceneMatricesUBO.bind();
-    this.pointLightUBO.bind();
-    this.directionalLightUBO.bind();
-    this.modelMatricesUBO.bind();
-    this.materialUBO.bind(); 
-    this.guiUBO.bind();
-
-    const displayBump = scene.gui.displayBump;
-    const textureLod = scene.gui.diffuseLod;
-    const bumpIntensity = scene.gui.bumpIntensity;
-
     this.guiUBO.update([
       scene.gui.diffuseLod,
       scene.gui.bumpIntensity,
@@ -217,21 +229,32 @@ class Renderer {
       scene.gui.displaySpecular
     ]);
     
-    // Update per scene ubos
-    this.sceneMatricesUBO.update([
-      ...camera.viewMatrix,
-      ...camera.projectionMatrix
+    // TODO: Why doens't integers work? Float32Array??
+    this.sceneUBO.update([
+      ...camera.viewMatrix, // Starts at multiple of base
+      ...camera.projectionMatrix,
+      scene.pointLights.length, // 4 bytes .. 
+      scene.directionalLights.length
     ]);
 
-    // Update per scene light's UBO
     this._uploadLightning(scene, camera);
-    
+  
     // TODO:
     //1. Front to back for opaque
     //2. Batch together materials
     //3. Back to front for transparent
+    // All objects rendered with the same shader
+    this.standardShader.activate();
+    const program = this.standardShader.program;
+    const gl = glContext();
+    // Set the uniform block binding for the active program
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
+    // Render scene normal
     scene.objects.forEach(object => {
-      this._renderObjectWithPrimaryMaterial(object, scene, camera);
+      this._renderObject(object, scene, camera);
     });
   }
 

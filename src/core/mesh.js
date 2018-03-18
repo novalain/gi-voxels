@@ -3,6 +3,7 @@ import Entity from './object.js';
 import GenericMaterial from '../materials/genericmaterial.js';
 import Shader from '../materials/shader.js'
 import SimpleShader from '../materials/simpleshader.js'
+import Texture from '../renderer/texture.js';
 // For storing normal matrix, which depends on camera and is specific per mesh and NOT per object
 import { mat4 } from 'gl-matrix';
 
@@ -36,19 +37,68 @@ class Mesh extends Entity {
   //     this._shaders.push(new SimpleShader(material));
   //   });
   // }
-  setMaterial(material) {
-    this._material = material;
+  setMaterialData(material) {
+    this.materialData = material.materialData;
+    const materialData = this.materialData;
+    if (materialData.mapSpecular) {
+      this._specularMap = new Texture();
+      this._specularMap.createTexture(materialData.mapSpecular.texture);
+    }
+
+    if (materialData.mapDiffuse) {
+      this._diffuseMap = new Texture();
+      this._diffuseMap.createTexture(materialData.mapDiffuse.texture);
+    }
+
+    if (materialData.mapBump) {
+      this._bumpMap = new Texture();
+      this._bumpMap.createTexture(materialData.mapBump.texture);
+    }
+
+    if (materialData.mapDissolve) {
+      this._dissolveMap = new Texture();
+      this._dissolveMap.createTexture(materialData.mapDissolve.texture);
+    }
+  }
+
+  uploadTextures(program) {
+    const gl = glContext();
+    let location;
+  
+    if (this._diffuseMap) {
+      gl.activeTexture(gl.TEXTURE0 + 0);
+      this._diffuseMap.bind();
+      location = gl.getUniformLocation(program, 'textureMap');
+      gl.uniform1i(location, 0); // Tex unit 0
+    }
+
+    if (this._bumpMap) {
+      gl.activeTexture(gl.TEXTURE0 + 1);
+      this._bumpMap.bind();
+      location = gl.getUniformLocation(program, 'bumpMap');
+      gl.uniform1i(location, 1); // Tex unit 1
+    }
+
+    if (this._specularMap) {
+      gl.activeTexture(gl.TEXTURE0 + 2);
+      this._specularMap.bind();
+      location = gl.getUniformLocation(program, 'specularMap');
+      gl.uniform1i(location, 2);
+    }
+
+    if (this._dissolveMap) {
+      gl.activeTexture(gl.TEXTURE0 + 3);
+      this._dissolveMap.bind();
+      location = gl.getUniformLocation(program, 'dissolveMap');
+      gl.uniform1i(location, 3);
+    }
   }
 
   _initializeBuffers() {
     const geometry = this._geometry;
     const gl = glContext();
     this._vao = gl.createVertexArray();
-    //this._vaos = [];
-    //for (let i = 0; i < geometry.indices.length; ++i) {
-    //this._vaos.push(gl.createVertexArray());
     gl.bindVertexArray(this._vao);
-
     // Position buffer
     {
       const positionBuffer = gl.createBuffer();
