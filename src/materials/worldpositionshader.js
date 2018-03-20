@@ -33,7 +33,6 @@ class WorldPositionShader {
             void main() {
                 worldPosition = vec3(modelMatrix * vec4(position, 1.0));
                 gl_Position = projectionMatrix * viewMatrix * vec4(worldPosition, 1.0);
-             
             }
         `;
 
@@ -42,6 +41,22 @@ class WorldPositionShader {
             
             in vec3 worldPosition;
             out vec4 outColor;
+
+            const int MAX_POINT_LIGHTS = 8;
+
+            // TODO remoev
+            layout (std140) uniform materialBuffer {
+                vec4 mambient; // 16 0 - base | aligned offset
+                vec4 mdiffuse; // 16 16
+                //vec4 memissive;
+                vec4 mspecular; // 16 32
+                float specularExponent; // 4 48
+                bool hasDiffuseMap; // 4 52
+                bool hasNormalMap; // 4 56
+                bool hasSpecularMap; // 4 60
+                bool hasDissolveMap; // 4 64
+            };
+
             
             void main() {
                 outColor.rgb = worldPosition;

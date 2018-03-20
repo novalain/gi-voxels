@@ -48,8 +48,12 @@ class FrameBufferObject {
     }
   }
 
-  // transitionToShaderResource() {
-  // }
+  transitionToShaderResource(program) {
+    const gl = glContext();
+    gl.activeTexture(gl.TEXTURE0 + 0);
+    gl.bindTexture(gl.TEXTURE_2D, this.colorBuffer);
+    gl.uniform1i(gl.getUniformLocation(program, 'Texture'), 0);
+  }
 
   bind() {
     const gl = glContext();

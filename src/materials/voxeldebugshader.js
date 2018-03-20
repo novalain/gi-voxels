@@ -9,31 +9,77 @@ class VoxelDebugShader {
         const vsSource = `#version 300 es
 
             precision highp float;
-
             layout(location = 0) in vec3 position;
-            layout(location = 1) in vec3 normal;
-            layout(location = 2) in vec2 uv;
 
-            layout(location = 3) in vec3 tangent;
-            layout(location = 4) in vec3 bitangent;
-           
-            layout (std140) uniform modelMatrices {
-                mat4 modelMatrix;
-                mat4 normalMatrix;
-            };
+            // layout (std140) uniform modelMatrices {
+            //     mat4 modelMatrix;
+            //     mat4 normalMatrix;
+            // };
+            
+            out vec2 textureCoordinateFrag;
 
-            out vec2 vUv;
-    
+            vec2 scaleAndBias(vec2 p) { return 0.5f * p + vec2(0.5f); }
             void main() {
+                textureCoordinateFrag = scaleAndBias(position.xy);
+                gl_Position = vec4(position, 1);
                 // World space to tex coords        
             }
         `;
 
-        const fsSource = `#version 300 es            
-      
-        void main() {
+        const fsSource = `#version 300 es     
+            precision highp float;      
+            precision mediump sampler3D;                  
+
+            #define STEP_LENGTH 0.005
+            #define INV_STEP_LENGTH (1.0 / STEP_LENGTH)
             
-        }
+            const int MAX_POINT_LIGHTS = 8;
+
+            // // TODO remoev
+            // layout (std140) uniform materialBuffer {
+            //     vec4 mambient; // 16 0 - base | aligned offset
+            //     vec4 mdiffuse; // 16 16
+            //     //vec4 memissive;
+            //     vec4 mspecular; // 16 32
+            //     float specularExponent; // 4 48
+            //     bool hasDiffuseMap; // 4 52
+            //     bool hasNormalMap; // 4 56
+            //     bool hasSpecularMap; // 4 60
+            //     bool hasDissolveMap; // 4 64
+            // };
+
+            uniform sampler2D Texture; // Unit cube back FBO.
+            uniform sampler3D texture3D; // Texture in which voxelization is stored.
+            uniform vec3 cameraPosition;
+
+            in vec2 textureCoordinateFrag; 
+            out vec4 color;
+
+           // int state = 0;
+                        
+            // Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
+            vec3 scaleAndBias(vec3 p) { return 0.5f * p + vec3(0.5f); }
+
+            void main() {
+                float mipmapLevel = 0.0;
+                // Initialize ray.
+                vec3 origin = cameraPosition;
+                vec3 direction = texture(Texture, textureCoordinateFrag).xyz - origin;
+                int numberOfSteps = int(INV_STEP_LENGTH * length(direction));
+                direction = normalize(direction);
+               
+                // Trace.
+                color = vec4(0.0f);
+                for(int step = 0; step < numberOfSteps && color.a < 0.99; ++step) {
+                    vec3 currentPoint = origin + STEP_LENGTH * float(step) * direction;
+                    vec3 coordinate = scaleAndBias(currentPoint);
+                   
+                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint), mipmapLevel);
+                    color += (1.0f - color.a) * currentSample;
+                } 
+                color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+                
+            }
     `;
 
 
