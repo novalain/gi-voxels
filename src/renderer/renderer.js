@@ -4,6 +4,9 @@ import UniformBufferObject from '../utils/ubo.js';
 import OrthographicCamera from '../cameras/orthographiccamera.js'
 import StandardShader from '../materials/standardshader.js'
 import VoxelizationShader from '../materials/voxelizationshader.js'
+import VoxelDebugShader from '../materials/voxeldebugshader.js'
+import WorldPositionShader from '../materials/worldpositionshader.js'
+import FrameBufferObject from '../utils/framebufferobject.js'
 
 // TODO: Remove global
 let context;
@@ -39,8 +42,12 @@ class Renderer {
     // if (!ext) {
     //   console.log("ASDASDASD WARNING");
     // }
+    this.voxelDebugShader = new VoxelDebugShader;
     this.voxelizationShader = new VoxelizationShader();
+    this.worldPositionShader = new WorldPositionShader();
     this.initializeVoxelization();
+
+    this.backFBO = new FrameBufferObject(gl.canvas.width, gl.canvas.height);
 
     this.sceneUBO.bind();
     this.pointLightUBO.bind();
@@ -70,8 +77,47 @@ class Renderer {
     mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
   }
 
-  voxelizeScene(scene, camera) {
+  renderVoxelDebug(scene, camera) {
 
+    const gl = glContext();
+    this.worldPositionShader.activate();
+    const program = this.worldPositionShader.program;
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);    
+
+    // Settings.
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+
+    // Back.
+    //gl.cullFace(gl.FRONT);
+    //gl.bindFramebuffer(gl.FRAMEBUFFER, this.backFBO);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
+    this.backFBO.bind();
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+      alert("FBO is not complete");
+    }
+
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+
+    // Render to FBO
+    scene.objects.forEach(object => {
+      this._renderObject(object, scene, camera, program, false);
+    });
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // Draw FBO to screen
+    
+    // Render 3d texture to screen
+
+
+  }
+
+  voxelizeScene(scene, camera) {
     const gl = glContext();
     gl.viewport(0, 0, 64, 64);
     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
@@ -81,7 +127,6 @@ class Renderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
     //gl.frameBufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT_0, gl.TEXTURE_2D,  )
 
-  
     this.voxelizationShader.activate();
     const program = this.voxelizationShader.program;
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
@@ -116,8 +161,8 @@ class Renderer {
       }
 
       // Set uniforms
-      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
       gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), 0);
     
       // Render scene
@@ -125,7 +170,9 @@ class Renderer {
         this._renderObject(object, scene, camera, program, false);
       });
     }
-    
+
+    // Generate mip
+    gl.generateMipmap(gl.TEXTURE_3D);
     
     // Clean state
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -231,6 +278,12 @@ class Renderer {
     if (this.voxelize) {
       this.voxelizeScene(scene, camera);
       this.voxelize = false;
+    }
+
+    if (true) {
+      // Render debug scene
+      this.renderVoxelDebug(scene, camera);
+      return;
     }
   
     // TODO:

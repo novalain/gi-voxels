@@ -31,6 +31,7 @@ class StandardShader {
             
             out vec3 vPosViewSpace;
             out vec2 vUv;
+            out vec3 worldPosVertex;
 
             out vec3 vNormalViewSpace;
             out vec3 vTangentViewSpace;
@@ -51,7 +52,7 @@ class StandardShader {
                     vBitangentViewSpace,
                     vNormalViewSpace
                 ));
-                
+                worldPosVertex = vec3(modelViewMatrix  * vec4(position, 1.0));
                 vPosViewSpace = vec3(modelViewMatrix * vec4(position, 1.0));
                 vUv = uv;
                 gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -124,6 +125,8 @@ class StandardShader {
 
             in vec3 vPosViewSpace;
             in vec3 vNormalViewSpace;
+
+            in vec3 worldPosVertex;
 
             in vec3 vTangentViewSpace;
             in vec3 vBitangentViewSpace;
@@ -230,6 +233,7 @@ class StandardShader {
                         discard;
                     }
                 }
+                //outColor = vec4(worldPosVertex, 1.0);
             }
         `;
         const gl = glContext();
