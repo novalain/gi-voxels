@@ -65,11 +65,24 @@ class Renderer {
     const gl = glContext();
     
     // Initialize 3d texture
+
+    this.mockData = new Uint8Array(64 * 64 * 64 * 4);
+    for (let i = 0; i < 64; ++i) {
+      for (let j = 0; j < 64; ++j) {
+        for (let k = 0; k < 64; k++) {
+          this.mockData [4*(i + j * 64 + k * 64 * 64)] = 5;
+          this.mockData [4*(i + j * 64 + k * 64 * 64) + 1] = 5;
+          this.mockData [4*(i + j * 64 + k * 64 * 64) + 2] = 5;
+          this.mockData [4*(i + j * 64 + k * 64 * 64) + 3] = 5;
+        }
+      }
+    }
+
     this.voxelTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, 64, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, 64, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.mockData);
     gl.generateMipmap(gl.TEXTURE_3D);
 
     // Initialize projection matrices
@@ -151,16 +164,22 @@ class Renderer {
     const gl = glContext();
     gl.viewport(0, 0, 64, 64);
     //gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    // glDisable(GL_CULL_FACE);
+    gl.disable(gl.CULL_FACE);
     // glDisable(GL_DEPTH_TEST);
-    const fb = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    this.voxelFb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_3D, this.voxelTexture, 0);
 
     this.renderBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 64, 64);    
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderBuffer);
 
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+      alert("FBO is not complete");
+    }
+
+    gl.clearColor(0.5, 0.4, 0.3, 0.6);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     this.voxelizationShader.activate();
@@ -169,18 +188,21 @@ class Renderer {
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
     gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
     // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
-    for (let i = 0; i < 64; i += 8) {
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i + 0);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, this.voxelTexture, 0, i + 1);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT2, this.voxelTexture, 0, i + 2);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT3, this.voxelTexture, 0, i + 3);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT4, this.voxelTexture, 0, i + 4);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT5, this.voxelTexture, 0, i + 5);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT6, this.voxelTexture, 0, i + 6);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, i + 7);
+    
 
-      // Can move up?
-      // Render to mip 0, we generate mipmaps after we're done
+    for (let i = 0; i < 64; i += 8) {
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, 0 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, this.voxelTexture, 0, 1 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT2, this.voxelTexture, 0, 2 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT3, this.voxelTexture, 0, 3 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT4, this.voxelTexture, 0, 4 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT5, this.voxelTexture, 0, 5 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT6, this.voxelTexture, 0, 6 + i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, 7 + i);
+
+
       gl.drawBuffers([
         gl.COLOR_ATTACHMENT0,
         gl.COLOR_ATTACHMENT1,
@@ -191,6 +213,14 @@ class Renderer {
         gl.COLOR_ATTACHMENT6,
         gl.COLOR_ATTACHMENT7,
       ]);
+
+      var data = new Uint8Array(64*64 * 4);
+      gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, data);
+      console.log("before read", data);
+
+      // Can move up?
+      // Render to mip 0, we generate mipmaps after we're done
+
 
       if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
         alert("FBO is not complete");
@@ -205,15 +235,26 @@ class Renderer {
       scene.objects.forEach(object => {
         this._renderObject(object, scene, camera, program, false);
       });
-    }
 
+      var data = new Uint8Array(64*64 * 4);
+      gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, data);
+      console.log("after one iteration read", data);
+    }
     // Generate mip
     gl.generateMipmap(gl.TEXTURE_3D);
     
+
+
+    var data = new Uint8Array(64*64 * 4);
+    gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    console.log("after", data);
+
+
+
     // Clean state
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    
+    gl.enable(gl.CULL_FACE); 
    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canva
   }
   
@@ -253,7 +294,7 @@ class Renderer {
     for (let i = 0; i < scene.pointLights.length; i++) {
       const l = scene.pointLights[i];
       this.pointLightUBO.update([
-        ...[l.positionViewSpace[0], l.positionViewSpace[1], l.positionViewSpace[2], 0.0],
+        ...[l.position[0], l.position[1], l.position[2], 0.0],
          ...l.color,  // vec4 16
          l.intensity // vec4 16
        ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
@@ -358,7 +399,7 @@ class Renderer {
     const gl = glContext();
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clearColor(127.0, 127.0, 213.0, 1.0);
     gl.clearDepth(1.0);  // TODO remove
 
     gl.cullFace(gl.BACK);

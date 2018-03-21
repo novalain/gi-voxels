@@ -42,69 +42,6 @@ class VoxelizationShader {
             }
         `;
 
-    // const fsSource = `#version 300 es
-    //         precision mediump float;
-    //         precision mediump int;
-
-    //         in vec2 vUv;
-
-    //         // Lighting attenuation factors.
-    //         #define DIST_FACTOR 1.1f /* Distance is multiplied by this when calculating attenuation. */
-    //         #define CONSTANT 1
-    //         #define LINEAR 0
-    //         #define QUADRATIC 1
-
-    //         struct PointLight {
-    //             vec3 positionWorldSpace;
-    //             vec4 color;
-    //             float intensity;
-    //         };
-
-    //         layout (std140) uniform pointLightsBuffer {
-    //             PointLight pointLights[MAX_POINT_LIGHTS];
-    //         };
-
-    //         uniform int numLights;
-
-    //         // Returns an attenuation factor given a distance.
-    //         float attenuate(float dist){ dist *= DIST_FACTOR; return 1.0f / (CONSTANT + LINEAR * dist + QUADRATIC * dist * dist); }
-
-    //         vec3 calculatePointLight(const PointLight light){
-    //             const vec3 direction = normalize(light.positionWorldSpace - worldPositionFrag);
-    //             const float distanceToLight = distance(light.positionWorldSpace, worldPositionFrag);
-    //             const float attenuation = attenuate(distanceToLight);
-    //             const float d = max(dot(normalize(normalFrag), direction), 0.0f);
-    //             return d * 1.0 * attenuation * vec4(1.0, 1.0, 1.0, 1.0);
-    //         };
-            
-    //         void main() {
-    //             for(uint i = 0; i < numLights; ++i) {
-    //                 color += calculatePointLight(pointLights[i]);
-    //             }
-
-    //             ivec3 camPos = ivec3(gl_FragCoord.x, gl_FragCoord.y, VoxelDimensions * gl_FragCoord.z);
-
-
-
-                
-    //             gl_FragData[0] = vec4(0.25);
-    //             gl_FragData[1] = vec4(0.25);
-    //             gl_FragData[2] = vec4(0.25);
-    //             gl_FragData[3] = vec4(0.25);
-    //             gl_FragData[4] = vec4(0.25);
-    //             gl_FragData[5] = vec4(0.25);
-    //             gl_FragData[6] = vec4(0.25);
-    //             gl_FragData[7] = vec4(0.25);
-
-
-    //             //vec3 spec = material.specularReflectivity * material.specularColor;
-	//             //vec3 diff = material.diffuseReflectivity * material.diffuseColor;
-    //             //color = (diff + spec) * color + clamp(material.emissivity, 0, 1) * material.diffuseColor;
-
-    //         }
-
-    //     `;
-
     const fsSource = `#version 300 es            
         precision highp float;
 
@@ -178,7 +115,7 @@ class VoxelizationShader {
         void main() {
             ivec3 camPos = ivec3(gl_FragCoord.x, gl_FragCoord.y, 64.0 * gl_FragCoord.z);
             ivec3 texPos = camPos;
-            texPos.z = 64 - texPos.z - 1;
+           // texPos.z = 64 - texPos.z - 1;
 
             vec3 color = vec3(0.0f);
             for(int i = 0; i < int(numLights); ++i) {
@@ -192,38 +129,38 @@ class VoxelizationShader {
             color = (diff + spec) * color + clamp(1.0, 0.0, 1.0) * vec3(mdiffuse);
     
             // 0, 8, 16
-            if (texPos.z == (renderTargetLayer * 8 + 0)) {
-                layer0 = vec4(color, 1.0);
-            }
+           // if (texPos.z == (renderTargetLayer * 8 + 0)) {
+                layer0 = vec4(0.0, 0.0, 0.0, 0.0);
+            //}
 
             // 1, 9. 17
-            if (texPos.z == (renderTargetLayer * 8 + 1)) {
-                layer1 = vec4(color, 1.0);
-            }
+            //if (texPos.z == (renderTargetLayer * 8 + 1)) {
+                layer1 = vec4(0.0, 0.0, 0.0, 0.0);
+            //}
 
-            if (texPos.z == (renderTargetLayer * 8 + 2)) {
-                layer2 = vec4(color, 1.0);
-            }
+            //if (texPos.z == (renderTargetLayer * 8 + 2)) {
+                layer2 = vec4(0.0, 0.0, 0.0, 0.0);
+            //}
 
-            if (texPos.z == (renderTargetLayer * 8 + 3)) {
-                layer3 = vec4(color, 1.0);
-            } 
+            //if (texPos.z == (renderTargetLayer * 8 + 3)) {
+                layer3 = vec4(0.0, 0.0, 0.0, 0.0);
+            //} 
 
-            if (texPos.z == (renderTargetLayer * 8 + 4)) {
-                layer4 = vec4(color, 1.0);
-            } 
+            //if (texPos.z == (renderTargetLayer * 8 + 4)) {
+                layer4 = vec4(0.0, 0.0, 0.0, 0.0);
+            //} 
 
-            if (texPos.z == (renderTargetLayer * 8 + 5)) {
-                layer5 = vec4(color, 1.0);
-            } 
+           // if (texPos.z == (renderTargetLayer * 8 + 5)) {
+                layer5 = vec4(0.0, 0.0, 0.0, 0.0);
+            //} 
 
-            if (texPos.z == (renderTargetLayer * 8 + 6)) { 
-                layer6 = vec4(color, 1.0);
-            } 
+            //if (texPos.z == (renderTargetLayer * 8 + 6)) { 
+                layer6 = vec4(0.0, 0.0, 0.0, 0.0);
+           // } 
 
-            if (texPos.z == (renderTargetLayer * 8 + 7)) {
-                layer7 = vec4(color, 1.0);
-            } 
+            //if (texPos.z == (renderTargetLayer * 8 + 7)) {
+                layer7 = vec4(0.0, 0.0, 0.0, 0.0);
+            //} 
         }
     `;
             

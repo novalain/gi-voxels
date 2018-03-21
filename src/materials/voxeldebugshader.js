@@ -18,7 +18,7 @@ class VoxelDebugShader {
             
             out vec2 textureCoordinateFrag;
 
-            vec2 scaleAndBias(vec2 p) { return 0.5f * p + vec2(0.5f); }
+            vec2 scaleAndBias(vec2 p) { return 0.5 * p + vec2(0.5); }
             void main() {
                 textureCoordinateFrag = scaleAndBias(position.xy);
                 gl_Position = vec4(position, 1);
@@ -58,7 +58,7 @@ class VoxelDebugShader {
            // int state = 0;
                         
             // Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
-            vec3 scaleAndBias(vec3 p) { return 0.5f * p + vec3(0.5f); }
+            vec3 scaleAndBias(vec3 p) { return 0.5 * p + vec3(0.5); }
 
             void main() {
                 float mipmapLevel = 0.0;
@@ -74,7 +74,7 @@ class VoxelDebugShader {
                     vec3 currentPoint = origin + STEP_LENGTH * float(step) * direction;
                     vec3 coordinate = scaleAndBias(currentPoint);
                    
-                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint), mipmapLevel);
+                    vec4 currentSample = textureLod(texture3D, vec3(1.0, 1.0, 1.0), mipmapLevel);
                     color += (1.0f - color.a) * currentSample;
                 } 
                 color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
