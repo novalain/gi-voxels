@@ -79,7 +79,7 @@ class StandardShader {
             };
 
             struct PointLight {
-                vec3 positionViewSpace;
+                vec3 position;
                 vec4 color;
                 float intensity;
             };
@@ -150,7 +150,7 @@ class StandardShader {
                 if (directional) {
                     l = directionalLights[lightIndex].directionViewSpace;
                 } else {
-                    l = pointLights[lightIndex].positionViewSpace - vPos; // Light dir
+                    l = vec3(viewMatrix * vec4(pointLights[lightIndex].position, 1.0)) - vPos; // Light dir
                 }
 
                 vec3 v = -vPos;
@@ -217,7 +217,7 @@ class StandardShader {
                 }  else if (hasDiffuseMap) {
                     vec4 specularMapColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                     vec4 texColor = textureLod(textureMap, vec2(vUv.x, 1.0 - vUv.y), texLod);
-                    outColor = vec4(diffuseSum, 1.0) * texColor + vec4(specSum, 1.0) * specularMapColor * float(hasSpecularMap);
+                    outColor = vec4(diffuseSum, 1.0)  + vec4(specSum, 1.0) * specularMapColor * float(hasSpecularMap);
                 } else {
                     // No texture
                     outColor = vec4(1.0, 0.0, 0.0, 1.0);

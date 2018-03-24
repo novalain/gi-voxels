@@ -32,7 +32,7 @@ class WorldPositionShader {
     
             void main() {
                 worldPosition = vec3(modelMatrix * vec4(position, 1.0));
-                gl_Position = projectionMatrix * viewMatrix * vec4(worldPosition, 1.0);
+                gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
             }
         `;
 
@@ -56,10 +56,9 @@ class WorldPositionShader {
                 bool hasSpecularMap; // 4 60
                 bool hasDissolveMap; // 4 64
             };
-
             
             void main() {
-                outColor.rgb = worldPosition;
+                outColor.rgb = normalize(worldPosition);
             }
     `;
         const gl = glContext();

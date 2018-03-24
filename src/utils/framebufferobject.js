@@ -19,15 +19,18 @@ class FrameBufferObject {
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);    
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderBuffer);
-    
+
     const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     if (status != gl.FRAMEBUFFER_COMPLETE) {
-      console.error(this.checkFrameBufferStatus(status, gl));
+      console.error(FrameBufferObject.checkFrameBufferStatus(status, gl));
       return;
     }
+
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  checkFrameBufferStatus(status, gl) {
+  static checkFrameBufferStatus(status, gl) {
     switch(status) {
       case gl.FRAMEBUFFER_COMPLETE:
         return 'Framebuffer complete!';
@@ -50,9 +53,9 @@ class FrameBufferObject {
 
   transitionToShaderResource(program) {
     const gl = glContext();
-    gl.activeTexture(gl.TEXTURE0 + 0);
+    gl.activeTexture(gl.TEXTURE0 + 1);
     gl.bindTexture(gl.TEXTURE_2D, this.colorBuffer);
-    gl.uniform1i(gl.getUniformLocation(program, 'Texture'), 0);
+    gl.uniform1i(gl.getUniformLocation(program, 'Texture'), 1);
   }
 
   bind() {

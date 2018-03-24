@@ -13,7 +13,7 @@ class OrthographicCamera extends Object {
         this.near = near;
         this.far = far; 
 
-        this.target = vec3.create();
+        this.target = vec3.fromValues(0.0, 0.0, 0.0);
         this.up = vec3.fromValues(0.0, 1.0, 0.0);
 
         this.target = vec3.create();
@@ -21,14 +21,16 @@ class OrthographicCamera extends Object {
         this.projectionMatrix = mat4.create();
         this.viewMatrix = mat4.create();
         this.updateProjectionMatrix();
+
+        this.lookAt(vec3.fromValues(0.0, 0.0, -1.0));
     }
 
     setTarget(dir) {
         vec3.copy(this.target, dir);
     }
 
-    lookAt() {
-        mat4.lookAt(this.viewMatrix, this.position, this.target, this.up);
+    lookAt(v) { 
+        mat4.lookAt(this.viewMatrix, this.position, v, this.up);
     }
 
     updateProjectionMatrix(width, height) {

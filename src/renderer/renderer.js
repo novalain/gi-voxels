@@ -66,30 +66,35 @@ class Renderer {
     
     // Initialize 3d texture
 
-    this.mockData = new Uint8Array(64 * 64 * 64 * 4);
-    for (let i = 0; i < 64; ++i) {
-      for (let j = 0; j < 64; ++j) {
-        for (let k = 0; k < 64; k++) {
-          this.mockData [4*(i + j * 64 + k * 64 * 64)] = 5;
-          this.mockData [4*(i + j * 64 + k * 64 * 64) + 1] = 5;
-          this.mockData [4*(i + j * 64 + k * 64 * 64) + 2] = 5;
-          this.mockData [4*(i + j * 64 + k * 64 * 64) + 3] = 5;
-        }
-      }
-    }
+    // this.mockData = new Uint8Array(64 * 64 * 64 * 4);
+    // for (let i = 0; i < 64; ++i) {
+    //   for (let j = 0; j < 64; ++j) {
+    //     for (let k = 0; k < 64; k++) {
+    //       this.mockData [4*(i + j * 64 + k * 64 * 64)] = 5;
+    //       this.mockData [4*(i + j * 64 + k * 64 * 64) + 1] = 5;
+    //       this.mockData [4*(i + j * 64 + k * 64 * 64) + 2] = 5;
+    //       this.mockData [4*(i + j * 64 + k * 64 * 64) + 3] = 5;
+    //     }
+    //   }
+    // }
 
     this.voxelTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, 64, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.mockData);
-    gl.generateMipmap(gl.TEXTURE_3D);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, 64, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+   //gl.generateMipmap(gl.TEXTURE_3D);
 
     // Initialize projection matrices
-    const orthoCamera = new OrthographicCamera(-1500, 1500, -1500, 1500, -1500, 4500);
-    orthoCamera.position = vec3.fromValues(0, 0, -3000);
-    const origin = vec4.fromValues(0.0, 0.0, 0.0);
-    orthoCamera.lookAt(origin);
+    // const orthoCamera = new OrthographicCamera(-1500, 1500, -1500, 1500, -1500, 4500);
+    // orthoCamera.position = vec3.fromValues(0, 0, -3000);
+    // const origin = vec4.fromValues(0.0, 0.0, 0.0);
+    // orthoCamera.lookAt(origin);
+    // this.projZ = mat4.create();
+    // mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+
+
+    const orthoCamera = new OrthographicCamera(-2000, 2000, -2000, 2000, 2000, -2000);
     this.projZ = mat4.create();
     mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
   }
@@ -103,59 +108,49 @@ class Renderer {
 
     // Settings.
   //  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.enable(gl.CULL_FACE);
+    gl.disable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
 
     // Back.
     //gl.cullFace(gl.FRONT);
     //gl.bindFramebuffer(gl.FRAMEBUFFER, this.backFBO);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
    
+    // Draw world positions!!!
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.backFBO.bind();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-   
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
       alert("FBO is not complete");
     }
-
- //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-
     // Render to FBO
     scene.objects.forEach(object => {
       this._renderObject(object, scene, camera, program, /*texture*/false);
     });
-
-    gl.cullFace(gl.BACK);
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    
-    // Draw FBO to screen
-    this.screenSpaceImageShader.activate();
-
-    this.backFBO.transitionToShaderResource(this.screenSpaceImageShader.program);
-    // Hack, use scale instead
-    gl.viewport(0, 0, 300, 300);
-    this.quad.draw();
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    
     
     //gl.disable(gl.DEPTH_TEST);
     this.voxelDebugShader.activate();
-
     gl.uniform3fv(gl.getUniformLocation(this.voxelDebugShader.program, 'cameraPosition'), camera.position);
-
-    
-    gl.activeTexture(gl.TEXTURE0 + 1);
+    gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
-    gl.uniform1i(gl.getUniformLocation(this.voxelDebugShader.program, 'texture3D'), 1);
+    gl.uniform1i(gl.getUniformLocation(this.voxelDebugShader.program, 'texture3D'), 0);
     this.backFBO.transitionToShaderResource(this.voxelDebugShader.program);
-    
+    this.quad.draw();
      // Render to FBO
     //  scene.objects.forEach(object => {
     //   this._renderObject(object, scene, camera, program, /*texture*/false, false);
     // });
+    
+
+
+    // Draw quad to screen
+    this.screenSpaceImageShader.activate();
+    this.backFBO.transitionToShaderResource(this.screenSpaceImageShader.program);
+    // Hack, use scale instead
+    gl.viewport(0, 0, 600, 600);
     this.quad.draw();
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     //gl.enable(gl.DEPTH_TEST);
   }
@@ -164,11 +159,11 @@ class Renderer {
     const gl = glContext();
     gl.viewport(0, 0, 64, 64);
     //gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    gl.disable(gl.CULL_FACE);
+    //gl.disable(gl.CULL_FACE);
     // glDisable(GL_DEPTH_TEST);
     this.voxelFb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_3D, this.voxelTexture, 0);
+    //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_3D, this.voxelTexture, 0);
 
     this.renderBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
@@ -179,8 +174,7 @@ class Renderer {
       alert("FBO is not complete");
     }
 
-    gl.clearColor(0.5, 0.4, 0.3, 0.6);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.clearColor(0.0, 0.5, 0.0, 0.0);
 
     this.voxelizationShader.activate();
     const program = this.voxelizationShader.program;
@@ -189,46 +183,57 @@ class Renderer {
     gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
     // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
     
-
-    for (let i = 0; i < 64; i += 8) {
-
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, 0 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, this.voxelTexture, 0, 1 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT2, this.voxelTexture, 0, 2 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT3, this.voxelTexture, 0, 3 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT4, this.voxelTexture, 0, 4 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT5, this.voxelTexture, 0, 5 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT6, this.voxelTexture, 0, 6 + i);
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, 7 + i);
+    const sceneScale = 1500;
+    for (let i = 0; i < 64; i++ ) {
+      const orthoCamera = new OrthographicCamera(
+        -sceneScale, 
+        sceneScale, 
+        -sceneScale, 
+        sceneScale,
+        sceneScale - (i / 64) * sceneScale * 2, // near
+        -4500); // far
 
 
-      gl.drawBuffers([
-        gl.COLOR_ATTACHMENT0,
-        gl.COLOR_ATTACHMENT1,
-        gl.COLOR_ATTACHMENT2,
-        gl.COLOR_ATTACHMENT3,
-        gl.COLOR_ATTACHMENT4,
-        gl.COLOR_ATTACHMENT5,
-        gl.COLOR_ATTACHMENT6,
-        gl.COLOR_ATTACHMENT7,
+      // const orthoCamera = new OrthographicCamera(-2000, 2000, -2000, 2000, 2000, -2000);
+      // orthoCamera.position = vec3.fromValues(0, 0, -3000); 
+
+
+      this.projZ = mat4.create();
+      mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+      gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
+      //gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, orthoCamera.viewMatrix);
+
+      gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT1, this.voxelTexture, 0, 1 + i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT2, this.voxelTexture, 0, 2 + i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT3, this.voxelTexture, 0, 3 + i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT4, this.voxelTexture, 0, 4 + i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT5, this.voxelTexture, 0, 5 + i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT6, this.voxelTexture, 0, 6 + i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, 7 +   i );
+
+       gl.drawBuffers([
+         gl.COLOR_ATTACHMENT0,
+        // gl.COLOR_ATTACHMENT1,
+        // gl.COLOR_ATTACHMENT2,
+        // gl.COLOR_ATTACHMENT3,
+        // gl.COLOR_ATTACHMENT4,
+        // gl.COLOR_ATTACHMENT5,
+        // gl.COLOR_ATTACHMENT6,
+        // gl.COLOR_ATTACHMENT7,
       ]);
 
-      var data = new Uint8Array(64*64 * 4);
-      gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, data);
-      console.log("before read", data);
-
+  
       // Can move up?
       // Render to mip 0, we generate mipmaps after we're done
-
 
       if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
         alert("FBO is not complete");
       }
 
       // Set uniforms
-      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
       gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), i);
     
       // Render scene
@@ -236,23 +241,50 @@ class Renderer {
         this._renderObject(object, scene, camera, program, false);
       });
 
-      var data = new Uint8Array(64*64 * 4);
-      gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, data);
-      console.log("after one iteration read", data);
+      let w = 64;
+      let h = 64;
+      var data = new Uint8Array(w * h * 4);
+      gl.readBuffer(gl.COLOR_ATTACHMENT0);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      //console.log("CLR ATTACHMENT 0" , data);
+
+      let dataCount = 0;
+      for (let j = 0; j < w * h*4; ++j) {
+        if (data[j] != 0) {
+          dataCount++;
+        }
+      }
+
+      console.log('Layer ' + i+ " data values ", dataCount);
+
+      // gl.readBuffer(gl.COLOR_ATTACHMENT1);
+      // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      // console.log("CLR ATTACHMENT 1", data);
+      // gl.readBuffer(gl.COLOR_ATTACHMENT2);
+      // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      // console.log("CLR ATTACHMENT 2", data);
+      // gl.readBuffer(gl.COLOR_ATTACHMENT3);
+      // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      // console.log("CLR ATTACHMENT 3", data);
+      // gl.readBuffer(gl.COLOR_ATTACHMENT4);
+      // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      // console.log("CLR ATTACHMENT 4", data);
+      // gl.readBuffer(gl.COLOR_ATTACHMENT5);
+      // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      // console.log("CLR ATTACHMENT 5", data);
+      // gl.readBuffer(gl.COLOR_ATTACHMENT6);
+      // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      // console.log("CLR ATTACHMENT 6", data);
+      // gl.readBuffer(gl.COLOR_ATTACHMENT7);
+      //  gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data,0);
+      // console.log("CLR ATTACHMENT 7", data);
     }
     // Generate mip
     gl.generateMipmap(gl.TEXTURE_3D);
     
-
-
-    var data = new Uint8Array(64*64 * 4);
-    gl.readPixels(0, 0, 64, 64, gl.RGBA, gl.UNSIGNED_BYTE, data);
-    console.log("after", data);
-
-
-
     // Clean state
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.enable(gl.CULL_FACE); 
    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canva
@@ -294,7 +326,7 @@ class Renderer {
     for (let i = 0; i < scene.pointLights.length; i++) {
       const l = scene.pointLights[i];
       this.pointLightUBO.update([
-        ...[l.position[0], l.position[1], l.position[2], 0.0],
+        ...[l.position[0], l.position[1], l.position[2], 0.0], // should be view space in the rest
          ...l.color,  // vec4 16
          l.intensity // vec4 16
        ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
@@ -358,7 +390,7 @@ class Renderer {
       this.voxelize = false;
     }
 
-    if (true) {
+    if (false) {
       // Render debug scene
       this.renderVoxelDebug(scene, camera);
       return;

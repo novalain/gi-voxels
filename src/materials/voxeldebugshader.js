@@ -35,19 +35,6 @@ class VoxelDebugShader {
             
             const int MAX_POINT_LIGHTS = 8;
 
-            // // TODO remoev
-            // layout (std140) uniform materialBuffer {
-            //     vec4 mambient; // 16 0 - base | aligned offset
-            //     vec4 mdiffuse; // 16 16
-            //     //vec4 memissive;
-            //     vec4 mspecular; // 16 32
-            //     float specularExponent; // 4 48
-            //     bool hasDiffuseMap; // 4 52
-            //     bool hasNormalMap; // 4 56
-            //     bool hasSpecularMap; // 4 60
-            //     bool hasDissolveMap; // 4 64
-            // };
-
             uniform sampler2D Texture; // Unit cube back FBO.
             uniform sampler3D texture3D; // Texture in which voxelization is stored.
             uniform vec3 cameraPosition;
@@ -72,13 +59,11 @@ class VoxelDebugShader {
                 color = vec4(0.0f);
                 for(int step = 0; step < numberOfSteps && color.a < 0.99; ++step) {
                     vec3 currentPoint = origin + STEP_LENGTH * float(step) * direction;
-                    vec3 coordinate = scaleAndBias(currentPoint);
-                   
-                    vec4 currentSample = textureLod(texture3D, vec3(1.0, 1.0, 1.0), mipmapLevel);
+                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint), mipmapLevel);
                     color += (1.0f - color.a) * currentSample;
                 } 
                 color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
-                
+                //color.rgb = texture(Texture, textureCoordinateFrag).xyz;
             }
     `;
 
