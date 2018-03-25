@@ -16,11 +16,12 @@ class OrthographicCamera extends Object {
         this.target = vec3.fromValues(0.0, 0.0, 0.0);
         this.up = vec3.fromValues(0.0, 1.0, 0.0);
 
+        this.position = vec3.fromValues(0.0, 0.0, 0.0);
         this.target = vec3.create();
         this.up = vec3.fromValues(0, 1, 0);
         this.projectionMatrix = mat4.create();
         this.viewMatrix = mat4.create();
-        this.updateProjectionMatrix();
+        this.updateProjectionMatrix(left, right, bottom, top, near, far);
 
         this.lookAt(vec3.fromValues(0.0, 0.0, -1.0));
     }
@@ -33,15 +34,15 @@ class OrthographicCamera extends Object {
         mat4.lookAt(this.viewMatrix, this.position, v, this.up);
     }
 
-    updateProjectionMatrix(width, height) {
+    updateProjectionMatrix(left, right, bottom, top, near, far) {
         mat4.ortho(
           this.projectionMatrix,
-          this.left,
-          this.right,
-          this.bottom,
-          this.top,
-          this.near,
-          this.far,
+          left,
+          right,
+          bottom,
+          top,
+          near,
+          far,
         );
     }
 }

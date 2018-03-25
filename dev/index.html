@@ -56,9 +56,9 @@
         console.log("object and mat data", objMatData);       
 
         const scene = new siick.Scene();
-       // const camera = new siick.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1.0, 5000.0);
-        let scale = 1500;
-        const camera = new siick.OrthographicCamera(-scale , scale , -scale  , scale  , 1500  , -4500 );
+        //const camera = new siick.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1.0, 5000.0);
+        let scale = 2000;
+        const camera = new siick.OrthographicCamera(-scale , scale , -scale  , scale  , scale, -scale );
         //camera.position[2] = 0;
         //camera.position[0] = 0;
         //camera.position[1] = 0;

@@ -10,7 +10,6 @@ class Scene {
     this.pointLights = [];
     this.directionalLights = [];
     this._gui = new Gui();
-    
     //this._gui.add(this.displayBumpMap, 'bump');
   }
 
@@ -31,7 +30,7 @@ class Scene {
     }
 
     if (object instanceof DirectionalLight) {
-      const light = object;
+      const light = object;R
       this.directionalLights.push(light);
 
       const lightsGui = this._gui.lights;
@@ -47,6 +46,9 @@ class Scene {
   }
 
   traverse(camera) {    
+
+    const gui = this._gui;
+    camera.updateProjectionMatrix(gui.orthoLeft, gui.orthoRight, gui.orthoBottom, gui.orthoTop, gui.orthoNear, gui.orthoFar);
 
     // Update camera
     // TODO: Do this on change

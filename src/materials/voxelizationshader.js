@@ -46,7 +46,7 @@ class VoxelizationShader {
                 //vNormalWorld = normalize(mat3(transpose(inverse(modelMatrix))) * normal);
                 vNormalWorld = vec3(normalMatrix * vec4(normal, 1.0));
                 // We need to project and rasterize with the viewport
-                gl_Position = viewProjZ * modelMatrix * vec4(position, 1); 
+                gl_Position = viewProjZ * modelMatrix *  vec4(position, 1); 
             }
         `;
 
@@ -108,9 +108,6 @@ class VoxelizationShader {
         // layout(location = 7) out vec4 layer7;
 
    
-
-        uniform mat4 viewProjZ;
-
         // Returns an attenuation factor given a distance.
         float attenuate(float dist) { 
             dist *= DIST_FACTOR; 
@@ -132,7 +129,10 @@ class VoxelizationShader {
                 color += calculatePointLight(pointLights[i]);
             }
 
-            layer0 = vec4(color, 1.0); //ec4(0.5);
+            layer0 = vec4(color, 1.0);
+            
+            
+            
             // layer1 = vec4(0.5);
             // layer2 = vec4(0.5);
             // layer3 = vec4(0.5);

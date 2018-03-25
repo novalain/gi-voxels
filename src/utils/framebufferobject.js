@@ -22,7 +22,7 @@ class FrameBufferObject {
 
     const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     if (status != gl.FRAMEBUFFER_COMPLETE) {
-      console.error(FrameBufferObject.checkFrameBufferStatus(status, gl));
+      console.error(FrameBufferObject.checkFrameBufferStatus(status));
       return;
     }
 
@@ -30,7 +30,8 @@ class FrameBufferObject {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  static checkFrameBufferStatus(status, gl) {
+  static checkFrameBufferStatus(status) {
+    const gl = glContext();
     switch(status) {
       case gl.FRAMEBUFFER_COMPLETE:
         return 'Framebuffer complete!';

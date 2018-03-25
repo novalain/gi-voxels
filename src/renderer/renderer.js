@@ -64,7 +64,12 @@ class Renderer {
   initializeVoxelization() {
     const gl = glContext();
     
+
+    
+    this.voxelTextureSize = 64;
     // Initialize 3d texture
+
+
 
     // this.mockData = new Uint8Array(64 * 64 * 64 * 4);
     // for (let i = 0; i < 64; ++i) {
@@ -78,11 +83,7 @@ class Renderer {
     //   }
     // }
 
-    this.voxelTexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
-    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, 64, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    //gl.bindTexture(gl.TEXTURE_3D, null);
    //gl.generateMipmap(gl.TEXTURE_3D);
 
     // Initialize projection matrices
@@ -94,9 +95,9 @@ class Renderer {
     // mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
 
 
-    const orthoCamera = new OrthographicCamera(-2000, 2000, -2000, 2000, 2000, -2000);
-    this.projZ = mat4.create();
-    mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+   // const orthoCamera = new OrthographicCamera(-2000, 2000, -2000, 2000, 2000, -2000);
+    //this.projZ = mat4.create();
+   // mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
   }
 
   renderVoxelDebug(scene, camera) {
@@ -120,7 +121,7 @@ class Renderer {
     this.backFBO.bind();
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-      alert("FBO is not complete");
+      console.error("FBO is not complete" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
     }
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
     // Render to FBO
@@ -135,7 +136,7 @@ class Renderer {
     gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     gl.uniform1i(gl.getUniformLocation(this.voxelDebugShader.program, 'texture3D'), 0);
-    this.backFBO.transitionToShaderResource(this.voxelDebugShader.program);
+    this.backFBO.transitionToShaderroresource(this.voxelDebugShader.program);
     this.quad.draw();
      // Render to FBO
     //  scene.objects.forEach(object => {
@@ -146,7 +147,7 @@ class Renderer {
 
     // Draw quad to screen
     this.screenSpaceImageShader.activate();
-    this.backFBO.transitionToShaderResource(this.screenSpaceImageShader.program);
+    this.backFBO.transitionToShaderroresource(this.screenSpaceImageShader.program);
     // Hack, use scale instead
     gl.viewport(0, 0, 600, 600);
     this.quad.draw();
@@ -157,105 +158,133 @@ class Renderer {
 
   voxelizeScene(scene, camera) {
     const gl = glContext();
-    gl.viewport(0, 0, 64, 64);
+    gl.viewport(0, 0, this.voxelTextureSize, this.voxelTextureSize);
     //gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    //gl.disable(gl.CULL_FACE);
+    gl.disable(gl.CULL_FACE);
     // glDisable(GL_DEPTH_TEST);
+    
+    
+    // Create 3d texture
+    this.voxelTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    
+    this.dummyTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    
     this.voxelFb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
-    //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_3D, this.voxelTexture, 0);
 
     this.renderBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 64, 64);    
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderBuffer);
 
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-      alert("FBO is not complete");
-    }
+    // if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+    //   console.error("FBO is not complete asdasd" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
+    // }
 
-    gl.clearColor(0.0, 0.5, 0.0, 0.0);
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
     this.voxelizationShader.activate();
     const program = this.voxelizationShader.program;
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-    gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
+    //gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
     // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
     
-    const sceneScale = 1500;
-    for (let i = 0; i < 64; i++ ) {
+    const sceneScale = 2000;
+    for (let i = 0; i < this.voxelTextureSize; i++ ) {
       const orthoCamera = new OrthographicCamera(
         -sceneScale, 
         sceneScale, 
         -sceneScale, 
         sceneScale,
-        sceneScale - (i / 64) * sceneScale * 2, // near
-        -4500); // far
+        sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
+        sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
+    
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.dummyTex, 0);
+      //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.dummyTex, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      console.log('near', sceneScale - (i / this.voxelTextureSize) * sceneScale * 2);
+      console.log('far', sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2 )
+      let w = this.voxelTextureSize;
+      let h = this.voxelTextureSize;
 
+      var data = new Uint8Array(w * h * 4);
+     // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
+      //console.log("CLR ATTACHMENT 0" , data);
 
-      // const orthoCamera = new OrthographicCamera(-2000, 2000, -2000, 2000, 2000, -2000);
-      // orthoCamera.position = vec3.fromValues(0, 0, -3000); 
+       let dataCount = 0;
+      // for (let j = 0; j < w*h*4; ++j) {
+      //   if (data[j] > 0) {
+      //     dataCount++;
+      //   }
+      // }
 
+      //console.log(' BEFORE Layer ' + i + " data values ", dataCount);
 
       this.projZ = mat4.create();
       mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
       gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
-      //gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, orthoCamera.viewMatrix);
 
-      gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i );
+    
+      //gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, 1);
       // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT1, this.voxelTexture, 0, 1 + i );
       // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT2, this.voxelTexture, 0, 2 + i );
       // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT3, this.voxelTexture, 0, 3 + i );
       // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT4, this.voxelTexture, 0, 4 + i );
       // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT5, this.voxelTexture, 0, 5 + i );
       // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT6, this.voxelTexture, 0, 6 + i );
-      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, 7 +   i );
+      // gl.framebufferTextureLayer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT7, this.voxelTexture, 0, 7 + i );
 
-       gl.drawBuffers([
-         gl.COLOR_ATTACHMENT0,
-        // gl.COLOR_ATTACHMENT1,
-        // gl.COLOR_ATTACHMENT2,
-        // gl.COLOR_ATTACHMENT3,
-        // gl.COLOR_ATTACHMENT4,
-        // gl.COLOR_ATTACHMENT5,
-        // gl.COLOR_ATTACHMENT6,
-        // gl.COLOR_ATTACHMENT7,
-      ]);
-
+      //  gl.drawBuffers([
+      //    gl.COLOR_ATTACHMENT0,
+      //    //gl.NONE,
+      //    //gl.COLOR_ATTACHMENT1
+      //   // gl.COLOR_ATTACHMENT2,
+      //   // gl.COLOR_ATTACHMENT3,
+      //   // gl.COLOR_ATTACHMENT4,
+      //   // gl.COLOR_ATTACHMENT5,
+      //   // gl.COLOR_ATTACHMENT6,
+      //   // gl.COLOR_ATTACHMENT7,
+      // ]);
   
       // Can move up?
       // Render to mip 0, we generate mipmaps after we're done
 
       if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-        alert("FBO is not complete");
+        console.error("FBO is not complete" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
       }
 
       // Set uniforms
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
-      gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), i);
+     // gl.uniform1i(gl.getUniformLocation(program, 'renderTargetLayer'), i);
     
       // Render scene
       scene.objects.forEach(object => {
         this._renderObject(object, scene, camera, program, false);
       });
 
-      let w = 64;
-      let h = 64;
-      var data = new Uint8Array(w * h * 4);
-      gl.readBuffer(gl.COLOR_ATTACHMENT0);
+   //   gl.readBuffer(gl.COLOR_ATTACHMENT0);
       gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
-      //console.log("CLR ATTACHMENT 0" , data);
-
-      let dataCount = 0;
-      for (let j = 0; j < w * h*4; ++j) {
-        if (data[j] != 0) {
+      console.log("CLR ATTACHMENT 0" , data);
+      dataCount = 0;
+      for (let j = 0; j < w*h*4; ++j) {
+        if (data[j] > 0) {
           dataCount++;
         }
       }
 
-      console.log('Layer ' + i+ " data values ", dataCount);
+
+
+      console.log('Layer ' + i + " data values ", dataCount);
 
       // gl.readBuffer(gl.COLOR_ATTACHMENT1);
       // gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data, 0);
@@ -280,13 +309,13 @@ class Renderer {
       // console.log("CLR ATTACHMENT 7", data);
     }
     // Generate mip
-    gl.generateMipmap(gl.TEXTURE_3D);
+  ///  gl.generateMipmap(gl.TEXTURE_3D);
     
     // Clean state
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.enable(gl.CULL_FACE); 
+   // gl.enable(gl.CULL_FACE); 
    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canva
   }
   
@@ -303,7 +332,7 @@ class Renderer {
       ...[...materialData.diffuse, 0.0], // vec3 16  16
       // ...[...materialData.emissive, 0.0], // vec3 16 32
       ...[...materialData.specular, 0.0], // vec3 16  48
-      materialData.specularExponent, // 4, 64
+      materialData.specularExponent, // 4, this.voxelTextureSize
       Boolean(materialData.mapDiffuse),  // 4, 72
       Boolean(materialData.mapBump), //4, 76
       Boolean(materialData.mapSpecular),
@@ -435,7 +464,7 @@ class Renderer {
     gl.clearDepth(1.0);  // TODO remove
 
     gl.cullFace(gl.BACK);
-    gl.enable(gl.CULL_FACE);
+   // gl.enable(gl.CULL_FACE);
     
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
