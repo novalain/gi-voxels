@@ -119,10 +119,11 @@ class Renderer {
     // Draw world positions!!!
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     this.backFBO.bind();
+
+ 
+ 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-      console.error("FBO is not complete" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
-    }
+ 
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
     // Render to FBO
     scene.objects.forEach(object => {
@@ -136,7 +137,7 @@ class Renderer {
     gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     gl.uniform1i(gl.getUniformLocation(this.voxelDebugShader.program, 'texture3D'), 0);
-    this.backFBO.transitionToShaderroresource(this.voxelDebugShader.program);
+    this.backFBO.transitionToShaderResource(this.voxelDebugShader.program);
     this.quad.draw();
      // Render to FBO
     //  scene.objects.forEach(object => {
@@ -144,10 +145,9 @@ class Renderer {
     // });
     
 
-
     // Draw quad to screen
     this.screenSpaceImageShader.activate();
-    this.backFBO.transitionToShaderroresource(this.screenSpaceImageShader.program);
+    this.backFBO.transitionToShaderResource(this.screenSpaceImageShader.program);
     // Hack, use scale instead
     gl.viewport(0, 0, 600, 600);
     this.quad.draw();
@@ -180,10 +180,10 @@ class Renderer {
     this.voxelFb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
 
-    this.renderBuffer = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 64, 64);    
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderBuffer);
+    // this.renderBuffer = gl.createRenderbuffer();
+    // gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
+    // gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 64, 64);    
+    // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.renderBuffer);
 
     // if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
     //   console.error("FBO is not complete asdasd" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
@@ -208,7 +208,9 @@ class Renderer {
         sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
         sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
     
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.dummyTex, 0);
+      //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.dummyTex, 0);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i);
+      
       //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.dummyTex, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       console.log('near', sceneScale - (i / this.voxelTextureSize) * sceneScale * 2);
@@ -309,7 +311,7 @@ class Renderer {
       // console.log("CLR ATTACHMENT 7", data);
     }
     // Generate mip
-  ///  gl.generateMipmap(gl.TEXTURE_3D);
+    gl.generateMipmap(gl.TEXTURE_3D);
     
     // Clean state
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -419,7 +421,7 @@ class Renderer {
       this.voxelize = false;
     }
 
-    if (false) {
+    if (true) {
       // Render debug scene
       this.renderVoxelDebug(scene, camera);
       return;

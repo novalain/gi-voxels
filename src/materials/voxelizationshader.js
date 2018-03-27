@@ -131,8 +131,6 @@ class VoxelizationShader {
 
             layer0 = vec4(color, 1.0);
             
-            
-            
             // layer1 = vec4(0.5);
             // layer2 = vec4(0.5);
             // layer3 = vec4(0.5);

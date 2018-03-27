@@ -58,7 +58,7 @@ class WorldPositionShader {
             };
             
             void main() {
-                outColor.rgb = normalize(worldPosition);
+                outColor.rgb = worldPosition;
             }
     `;
         const gl = glContext();

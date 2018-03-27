@@ -30,7 +30,7 @@ class VoxelDebugShader {
             precision highp float;      
             precision mediump sampler3D;                  
 
-            #define STEP_LENGTH 0.005
+            #define STEP_LENGTH 10.0
             #define INV_STEP_LENGTH (1.0 / STEP_LENGTH)
             
             const int MAX_POINT_LIGHTS = 8;
@@ -52,17 +52,17 @@ class VoxelDebugShader {
                 // Initialize ray.
                 vec3 origin = cameraPosition;
                 vec3 direction = texture(Texture, textureCoordinateFrag).xyz - origin;
-                int numberOfSteps = int(INV_STEP_LENGTH * length(direction));
+                int numberOfSteps = int( length(direction) / STEP_LENGTH);
                 direction = normalize(direction);
                
                 // Trace.
                 color = vec4(0.0f);
-                for(int step = 0; step < numberOfSteps && color.a < 0.99; ++step) {
-                    vec3 currentPoint = origin + STEP_LENGTH * float(step) * direction;
+                for(int i = 0; i < numberOfSteps; ++i) {
+                    vec3 currentPoint = origin + STEP_LENGTH * float(i) * direction;
                     vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint), mipmapLevel);
-                    color += (1.0f - color.a) * currentSample;
+                    color +=  currentSample;
                 } 
-                color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+               // color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
                 //color.rgb = texture(Texture, textureCoordinateFrag).xyz;
             }
     `;
