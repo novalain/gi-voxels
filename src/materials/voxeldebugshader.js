@@ -42,7 +42,7 @@ class VoxelDebugShader {
             in vec2 textureCoordinateFrag; 
             out vec4 color;
 
-           // int state = 0;
+            //int state = 0;
                         
             // Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
             vec3 scaleAndBias(vec3 p) { return 0.5 * p + vec3(0.5); }
@@ -59,8 +59,8 @@ class VoxelDebugShader {
                 color = vec4(0.0f);
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + STEP_LENGTH * float(i) * direction;
-                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint), mipmapLevel);
-                    color +=  currentSample;
+                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint / 1500.0), mipmapLevel);
+                    color += currentSample;
                 } 
                // color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
                 //color.rgb = texture(Texture, textureCoordinateFrag).xyz;

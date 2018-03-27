@@ -149,39 +149,43 @@ class Mesh extends Entity {
       );
     }
 
-    // Tangents
-    {
-      // Tangent buffer
-      const tangentBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.tangents), gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(
-        3);
-      gl.vertexAttribPointer(
-        3,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );  
+    if (geometry.tangents) {
+      // Tangents
+      {
+        // Tangent buffer
+        const tangentBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, tangentBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.tangents), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(
+          3);
+        gl.vertexAttribPointer(
+          3,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );  
+      }
     }
 
-    // Bitangent buffer
-    {
-      const bitangentBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.bitangents), gl.STATIC_DRAW);
-      gl.enableVertexAttribArray(
-        4);
-      gl.vertexAttribPointer(
-        4,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
+    if (geometry.bitangents) {
+      // Bitangent buffer
+      {
+        const bitangentBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, bitangentBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(geometry.bitangents), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(
+          4);
+        gl.vertexAttribPointer(
+          4,
+          3,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
+      }
     }
 
     const indexBuffer = gl.createBuffer();

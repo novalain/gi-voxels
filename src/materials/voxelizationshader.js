@@ -81,6 +81,11 @@ class VoxelizationShader {
             bool hasDissolveMap; // 4 64
         };
 
+        uniform sampler2D textureMap;
+        uniform sampler2D bumpMap;
+        uniform sampler2D specularMap;
+        uniform sampler2D dissolveMap;
+
         struct PointLight {
             vec3 position;
             vec4 color;
@@ -129,8 +134,12 @@ class VoxelizationShader {
                 color += calculatePointLight(pointLights[i]);
             }
 
-            layer0 = vec4(color, 1.0);
-            
+            layer0 = vec4(1.0);
+            if (hasDiffuseMap) {
+                layer0 = vec4(color, 1.0) * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)); 
+            } else {
+                layer0 = vec4(color, 1.0);
+            }        
             // layer1 = vec4(0.5);
             // layer2 = vec4(0.5);
             // layer3 = vec4(0.5);

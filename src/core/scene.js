@@ -47,9 +47,12 @@ class Scene {
 
   traverse(camera) {    
 
+
+
     const gui = this._gui;
     camera.updateProjectionMatrix(gui.orthoLeft, gui.orthoRight, gui.orthoBottom, gui.orthoTop, gui.orthoNear, gui.orthoFar);
 
+      console.log("campos", camera.position);
     // Update camera
     // TODO: Do this on change
     // camera.setFov(this._gui.fov);

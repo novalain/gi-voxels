@@ -115,11 +115,15 @@ class Cube {
       0.0, 1.0,
     ];
 
-    return {
+    const geometry = {
       positions,
-      indices,
-      normals,
       uvs,
+      normals
+    };
+
+    return {
+      indices,
+      geometry
     };
   }
 }

@@ -28,7 +28,7 @@ class ScreenSpaceImageShader {
             
             void main(){
                 vec4 worldPosition = vec4(texture(Texture, vUv).rgb, 1.0);
-                outColor = normalize(worldPosition);
+                outColor = worldPosition;
                 //outColor = vec4(texture(Texture, vUv).rgb, 1.0);
             }
             
