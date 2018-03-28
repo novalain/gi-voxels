@@ -18,12 +18,14 @@ class Gui {
     this.orthoTop = gridScale;
     this.orthoNear = gridScale;
     this.orthoFar = -gridScale;
+    this.showVoxels = false;
 
     this._specularMap = this._gui.add(this, 'displaySpecular');
     this._bumpMap = this._gui.add(this, 'displayBump');
     this._bumpIntensity = this._gui.add(this, 'bumpIntensity', 0.0, 2.0);
     this._lod = this._gui.add(this, 'diffuseLod', 0.0, 5.0);
     this._fov = this._gui.add(this, 'fov', 0, 100);
+    this._showVoxels = this._gui.add(this, 'showVoxels');
 
     this._orthoLeft = this._gui.add(this, 'orthoLeft', -5000, 5000);
     this._orthoRight = this._gui.add(this, 'orthoRight', -5000, 5000);

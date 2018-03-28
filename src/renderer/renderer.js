@@ -66,9 +66,9 @@ class Renderer {
   initializeVoxelization() {
     const gl = glContext();
 
-    this.voxelTextureSize = 64;
+    this.voxelTextureSize = 512;
     // Initialize 3d texture
-    const cube = new Cube(1500, 1500, 1500);
+    const cube = new Cube(3000, 3000, 3000);
     this.cubeMesh = new Mesh(cube.geometry, cube.indices);
 
 
@@ -137,6 +137,8 @@ class Renderer {
     
     //gl.disable(gl.DEPTH_TEST);
     this.voxelDebugShader.activate();
+
+   // gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);    
     gl.uniform3fv(gl.getUniformLocation(this.voxelDebugShader.program, 'cameraPosition'), camera.position);
     gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
@@ -153,7 +155,7 @@ class Renderer {
     this.screenSpaceImageShader.activate();
     this.backFBO.transitionToShaderResource(this.screenSpaceImageShader.program);
     // Hack, use scale instead
-    gl.viewport(0, 0, 600, 600);
+    gl.viewport(0, 0, 150, 150);
     this.quad.draw();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -164,7 +166,8 @@ class Renderer {
     const gl = glContext();
     gl.viewport(0, 0, this.voxelTextureSize, this.voxelTextureSize);
     //gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    gl.disable(gl.CULL_FACE);
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
     // glDisable(GL_DEPTH_TEST);
     
     
@@ -172,7 +175,7 @@ class Renderer {
     this.voxelTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -182,8 +185,8 @@ class Renderer {
     
     this.dummyTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     
     this.voxelFb = gl.createFramebuffer();
@@ -207,18 +210,58 @@ class Renderer {
     //gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
     // [0,7], [8, 15], [16, 23], [24, 31], [32, 39], [40, 47], [48, 55], [56, 63]
     
-    const sceneScale = 1500;
-    for (let i = 0; i < this.voxelTextureSize; i++ ) {
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
+
+    const sceneScale = 3000;
+    // for (let i = 0; i < this.voxelTextureSize; i++ ) {
+    //   const orthoCamera = new OrthographicCamera(
+    //     -sceneScale,
+    //     sceneScale, 
+    //     -sceneScale, 
+    //     sceneScale,
+    //     sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
+    //     sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
+
+    //   orthoCamera.lookAt(vec3.fromValues(0.0, 0.0, -1.0));
+    //   gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i);
+    //   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    //   this.projZ = mat4.create();
+    //   mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+    //   gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
+
+    //   if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+    //     console.error("FBO is not complete" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
+    //   }
+
+    //   // Set uniforms
+    //   gl.uniform1i(gl.getUniformLocation(program, 'xAxis'), 0);
+    //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+    //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+    
+    //   // Render scene
+    //   scene.objects.forEach(object => {
+    //     this._renderObject(object, scene, camera, program, /*texture*/true);
+    //   });
+
+    //   gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
+    // }
+    
+     for (let i = 0; i < this.voxelTextureSize; i++ ) {
       const orthoCamera = new OrthographicCamera(
-        -sceneScale, 
+        -sceneScale,
         sceneScale, 
         -sceneScale, 
         sceneScale,
         sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
         sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
 
+        orthoCamera.up = vec3.fromValues(0.0, 0.0, -1.0);
+        orthoCamera.lookAt(vec3.fromValues(0.0, 1.0, 0.0));
+      
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+   //   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       this.projZ = mat4.create();
       mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
@@ -229,6 +272,7 @@ class Renderer {
       }
 
       // Set uniforms
+      gl.uniform1i(gl.getUniformLocation(program, 'yAxis'), 1);
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     
@@ -240,50 +284,17 @@ class Renderer {
       gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     }
 
-    
-    // for (let i = 0; i < this.voxelTextureSize; i++) {
-    //   const orthoCamera = new OrthographicCamera(
-    //     -sceneScale,
-    //     sceneScale,
-    //     -sceneScale,
-    //     sceneScale,
-    //     sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
-    //     sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
-
-    //   orthoCamera.lookAt(-1.0, 0.0, 0.0);
-    //   gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i);
-    //   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    //   this.projZ = mat4.create();
-    //   mat4.multiply(this.projZ, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);
-    //   gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjZ'), false, this.projZ);
-
-    //   if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-    //     console.error("FBO is not complete" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
-    //   }
-
-    //   // Set uniforms
-    //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-    //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
-
-    //   // Render scene
-    //   scene.objects.forEach(object => {
-    //     this._renderObject(object, scene, camera, program, false);
-    //   });
-    // }
-
       // Generate mip
     gl.generateMipmap(gl.TEXTURE_3D);
     
+    gl.disable(gl.BLEND);
     // Clean state
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-   // gl.enable(gl.CULL_FACE); 
-   //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canva
+    //gl.enable(gl.CULL_FACE); 
+    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas
   }
-
-  
   
   _renderObject(object, scene, camera, program, uploadTextures = true, uploadShit = true) {
     this.modelMatricesUBO.update([
@@ -385,7 +396,7 @@ class Renderer {
       this.voxelize = false;
     }
 
-    if (true) {
+    if (scene.gui.showVoxels) {
       // Render debug scene
       this.renderVoxelDebug(scene, camera);
       return;

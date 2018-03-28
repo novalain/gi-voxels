@@ -30,7 +30,7 @@ class Scene {
     }
 
     if (object instanceof DirectionalLight) {
-      const light = object;R
+      const light = object;
       this.directionalLights.push(light);
 
       const lightsGui = this._gui.lights;
@@ -52,7 +52,7 @@ class Scene {
     const gui = this._gui;
     camera.updateProjectionMatrix(gui.orthoLeft, gui.orthoRight, gui.orthoBottom, gui.orthoTop, gui.orthoNear, gui.orthoFar);
 
-      console.log("campos", camera.position);
+     // console.log("campos", camera.position);
     // Update camera
     // TODO: Do this on change
     // camera.setFov(this._gui.fov);

@@ -15,13 +15,23 @@ class VoxelDebugShader {
             //     mat4 modelMatrix;
             //     mat4 normalMatrix;
             // };
+
+            // layout (std140) uniform sceneBuffer {
+            //     mat4 viewMatrix;
+            //     mat4 projectionMatrix;
+            //     float numLights;
+            //     float numDirectionalLights;
+            // };
             
+         //   out vec3 cameraPositionWorld;
             out vec2 textureCoordinateFrag;
 
             vec2 scaleAndBias(vec2 p) { return 0.5 * p + vec2(0.5); }
             void main() {
                 textureCoordinateFrag = scaleAndBias(position.xy);
                 gl_Position = vec4(position, 1);
+                
+              //  cameraPositionWorld = vec3(inverse(viewMatrix) * vec4(0, 0, 0, 1));
                 // World space to tex coords        
             }
         `;
@@ -30,7 +40,7 @@ class VoxelDebugShader {
             precision highp float;      
             precision mediump sampler3D;                  
 
-            #define STEP_LENGTH 10.0
+            #define STEP_LENGTH 2.0
             #define INV_STEP_LENGTH (1.0 / STEP_LENGTH)
             
             const int MAX_POINT_LIGHTS = 8;
@@ -40,6 +50,7 @@ class VoxelDebugShader {
             uniform vec3 cameraPosition;
 
             in vec2 textureCoordinateFrag; 
+          //  in vec3 cameraPositionWorld;
             out vec4 color;
 
             //int state = 0;
@@ -59,10 +70,21 @@ class VoxelDebugShader {
                 color = vec4(0.0f);
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + STEP_LENGTH * float(i) * direction;
-                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint / 1500.0), mipmapLevel);
+                    vec4 currentSample = textureLod(texture3D, scaleAndBias(vec3(currentPoint.x, 3000.0 - currentPoint.y, currentPoint.z) / 3000.0), mipmapLevel);
+
+                    if (currentSample.a > 0.0) {
+                        currentSample.rgb /= currentSample.a;
+                        // Alpha compositing
+                        color.rgb = color.rgb + (1.0 - color.a) * currentSample.a * currentSample.rgb;
+                        color.a   = color.a   + (1.0 - color.a) * currentSample.a;
+                    }
+                    if (color.a > 0.95) {
+                        break;
+                    }
                     color += currentSample;
                 } 
-               // color.rgb = pow(color.rgb, vec3(1.0 / 2.2));
+               // color = vec4(color.rgb, 1.0);
+                color.rgb = pow(color.rgb, vec3(1.0 / 3.2));
                 //color.rgb = texture(Texture, textureCoordinateFrag).xyz;
             }
     `;

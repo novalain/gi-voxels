@@ -23,7 +23,7 @@ class OrthographicCamera extends Object {
         this.viewMatrix = mat4.create();
         this.updateProjectionMatrix(left, right, bottom, top, near, far);
 
-        this.lookAt(vec3.fromValues(0.0, 0.0, -1.0));
+        this.lookAt(vec3.fromValues(-1.0, 0.0, 0.0));
     }
 
     setTarget(dir) {

@@ -34,7 +34,9 @@ class VoxelizationShader {
             out vec3 vPositionWorld;
 
             uniform mat4 viewProjZ;
-    
+            uniform bool xAxis;
+            uniform bool yAxis;
+
             void main() {
                 //vert.UV = vertexUV;
                 //vert.position_depth = DepthModelViewProjectionMatrix * vec4(vertexPosition_model, 1);
@@ -46,7 +48,29 @@ class VoxelizationShader {
                 //vNormalWorld = normalize(mat3(transpose(inverse(modelMatrix))) * normal);
                 vNormalWorld = vec3(normalMatrix * vec4(normal, 1.0));
                 // We need to project and rasterize with the viewport
-                gl_Position = viewProjZ * modelMatrix *  vec4(position, 1); 
+
+                vec3 pos = position;
+                mat4 resProj = viewProjZ; 
+                if (xAxis) {
+                    pos.y = position.y;
+                    pos.x = position.z;
+                    pos.z = 64.0 - position.x;
+                } 
+              
+                else if (yAxis) {
+                    //pos.z = 64.0 - position.y;
+                    //pos.y = 64.0 - position.z;
+                    //pos.x = position.x;
+
+                    // mat4 scale =  mat4( 1.0, 0, 0, 0,
+                    //                     0, 1.0, 0, 0,
+                    //                     0, 0, 1.0, 0,
+                    //                     0, 0, 0, 1.0);
+
+                    //resProj = scale * resProj ;
+                }
+
+                gl_Position = resProj * modelMatrix *  vec4(pos, 1); 
             }
         `;
 
@@ -96,6 +120,7 @@ class VoxelizationShader {
             PointLight pointLights[MAX_POINT_LIGHTS];
         };
 
+        uniform bool xAxis;
 
         // Lighting attenuation factors.
         #define DIST_FACTOR 1.1 /* Distance is multiplied by this when calculating attenuation. */
@@ -120,13 +145,16 @@ class VoxelizationShader {
         }
         
         vec3 calculatePointLight(PointLight light){
-            vec3 direction = normalize( light.position - vPositionWorld );
-            float distanceToLight = distance(light.position, vPositionWorld);
+
+            vec3 vertexPosition;
+            vertexPosition = vPositionWorld;
+
+            vec3 direction = normalize( light.position - vertexPosition );
+            float distanceToLight = distance(light.position, vertexPosition);
             float attenuation = attenuate(distanceToLight);
             float d = max(dot(normalize(vNormalWorld), direction), 0.0);
             return d * 1.0 * vec3(1.0); // intensity, light color missing
         }
-
 
         void main() {
             vec3 color = vec3(0.0f);
@@ -140,13 +168,6 @@ class VoxelizationShader {
             } else {
                 layer0 = vec4(color, 1.0);
             }        
-            // layer1 = vec4(0.5);
-            // layer2 = vec4(0.5);
-            // layer3 = vec4(0.5);
-            // layer4 = vec4(0.5);
-            // layer5 = vec4(0.5);
-            // layer6 = vec4(0.5);
-            // layer7 = vec4(0.5);
         }
     `;
             
