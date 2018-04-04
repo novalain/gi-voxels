@@ -166,10 +166,22 @@ class Renderer {
     const gl = glContext();
     gl.viewport(0, 0, this.voxelTextureSize, this.voxelTextureSize);
     //gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    gl.enable(gl.CULL_FACE);
+    gl.disable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     // glDisable(GL_DEPTH_TEST);
     
+
+    // Create 2D array texture slices
+    this.dummyTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.dummyTexture);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     
     // Create 3d texture
     this.voxelTexture = gl.createTexture();
@@ -183,11 +195,11 @@ class Renderer {
 
     gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     
-    this.dummyTex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    // this.dummyTex = gl.createTexture();
+    // gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     
     this.voxelFb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
@@ -247,7 +259,7 @@ class Renderer {
 
     //   gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     // }
-    
+   
      for (let i = 0; i < this.voxelTextureSize; i++ ) {
       const orthoCamera = new OrthographicCamera(
         -sceneScale,
@@ -260,7 +272,7 @@ class Renderer {
         orthoCamera.up = vec3.fromValues(0.0, 0.0, -1.0);
         orthoCamera.lookAt(vec3.fromValues(0.0, 1.0, 0.0));
       
-      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.voxelTexture, 0, i);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.dummyTexture, 0, i);
    //   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       this.projZ = mat4.create();
@@ -281,10 +293,63 @@ class Renderer {
         this._renderObject(object, scene, camera, program, /*texture*/true);
       });
 
-      gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
+      //gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.dummyTexture, 0, i);
+     // gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA, gl.UNSIGNED_BYTE, data, this.voxelTextureSize * i * 4);
+      // Render objects unbinds...
+     
     }
 
-      // Generate mip
+    let w = this.voxelTextureSize;
+    let h = this.voxelTextureSize;
+    let d = this.voxelTextureSize;
+   
+    let data = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * this.voxelTextureSize * 4);
+    for (let i = 0; i < this.voxelTextureSize; i++ ) { 
+    
+      let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.dummyTexture, 0, i);
+      gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA,  gl.UNSIGNED_BYTE, slice, 0);
+
+
+      // Loop through columns
+    //  for (let j = 0; j < this.voxelTextureSize * this.voxelTextureSize * 4; j++) {
+      //  data[this.voxelTextureSize * this.voxelTextureSize * i * 4 + j] = slice[ j];
+      //}
+      // Loop through rows
+
+
+      for(let i = 0; i < d * 4; ++i) {
+        for (let j = 0; j < h * 4; j++) {
+          const value = 
+
+
+
+        }
+      }
+
+      // for (let k = 0; k <  this.voxelTextureSize * 4; k++ )
+      // for (let j = 0; i < this.voxelTextureSize * 4; j += this.voxelTextureSize) {
+      //   data[]
+
+
+
+      // }
+
+
+      // for (let j = 0; j < this.voxelTextureSize * this.voxelTextureSize * 4; j++ ) {
+      //   if (data[i] > 0) {
+      //     console.log(data[i]);
+      //   }
+      // }
+    }
+
+  ///  gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
+    // Upload to 3d textuer
+
+    // Generate mip
+    gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
+    gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, this.voxelTextureSize, this.voxelTextureSize, this.voxelTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+
     gl.generateMipmap(gl.TEXTURE_3D);
     
     gl.disable(gl.BLEND);
@@ -293,9 +358,9 @@ class Renderer {
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     //gl.enable(gl.CULL_FACE); 
-    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas
+    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas  
   }
-  
+
   _renderObject(object, scene, camera, program, uploadTextures = true, uploadShit = true) {
     this.modelMatricesUBO.update([
       ...object.modelMatrix,

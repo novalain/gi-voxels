@@ -40,7 +40,7 @@ class VoxelDebugShader {
             precision highp float;      
             precision mediump sampler3D;                  
 
-            #define STEP_LENGTH 2.0
+            #define STEP_LENGTH 4.0
             #define INV_STEP_LENGTH (1.0 / STEP_LENGTH)
             
             const int MAX_POINT_LIGHTS = 8;
@@ -70,7 +70,7 @@ class VoxelDebugShader {
                 color = vec4(0.0f);
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + STEP_LENGTH * float(i) * direction;
-                    vec4 currentSample = textureLod(texture3D, scaleAndBias(vec3(currentPoint.x, 3000.0 - currentPoint.y, currentPoint.z) / 3000.0), mipmapLevel);
+                    vec4 currentSample = textureLod(texture3D, scaleAndBias(vec3(currentPoint.x, currentPoint.y, currentPoint.z) / 3000.0), mipmapLevel);
 
                     if (currentSample.a > 0.0) {
                         currentSample.rgb /= currentSample.a;
