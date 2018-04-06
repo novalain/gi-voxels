@@ -68,7 +68,7 @@ class Renderer {
 
     this.voxelTextureSize = 512;
     // Initialize 3d texture
-    const cube = new Cube(3000, 3000, 3000);
+    const cube = new Cube(2000, 2000, 2000);
     this.cubeMesh = new Mesh(cube.geometry, cube.indices);
 
 
@@ -161,6 +161,8 @@ class Renderer {
   }
 
   voxelizeScene(scene, camera) {
+
+    var t0 = performance.now();
     const gl = glContext();
     gl.viewport(0, 0, this.voxelTextureSize, this.voxelTextureSize);
     //gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
@@ -261,8 +263,8 @@ class Renderer {
         sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
 
       
-      orthoCamera.up = vec3.fromValues(0.0, 0.0, -1.0);
-      orthoCamera.lookAt(vec3.fromValues(0.0, 1.0, 0.0));
+      orthoCamera.up = vec3.fromValues(0.0, 0.0, 1.0);
+      orthoCamera.lookAt(vec3.fromValues(0.0, -1.0, 0.0));
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.yTexture, 0, i);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -361,12 +363,17 @@ class Renderer {
       // Render objects unbinds...
     }
 
+    var t1 = performance.now();
+    console.log("Voxel rendering took " + (t1 - t0) + " milliseconds.")
+
     let w = this.voxelTextureSize;
     let h = this.voxelTextureSize;
     let d = this.voxelTextureSize;
     
-    // X texture
+    
     let data = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * this.voxelTextureSize * 4);
+   
+    // X texture
     for (let i = 0; i < this.voxelTextureSize; i++ ) { 
     
       let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
@@ -390,38 +397,52 @@ class Renderer {
     }
 
     // Add to Y
-    // for (let i = 0; i < this.voxelTextureSize; i++ ) { 
+    for (let i = 0; i < this.voxelTextureSize; i++ ) { 
     
-    //   let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
-    //   gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.yTexture, 0, i);
-    //   gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA,  gl.UNSIGNED_BYTE, slice, 0);
+      let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.yTexture, 0, i);
+      gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA,  gl.UNSIGNED_BYTE, slice, 0);
 
-    //   let j = 0;
-    //   let it = 0;
-    //   let rowCount = 0;
-    //   for (let k = 0; k < w * w; k++) {
-    //     if (k > 0 && k % w === 0) { it = 0; rowCount++; }
+      let j = 0;
+      let it = 0;
+      let rowCount = 0;
+      for (let k = 0; k < w * w; k++) {
+        if (k > 0 && k % w === 0) { it = 0; rowCount++; }
 
-    //     data[ (i * w + w * w * rowCount + it++) * 4 + 0] = slice[j++];
-    //     data[ (i * w + w * w * rowCount + it++) * 4 + 1] = slice[j++];
-    //     data[ (i * w + w * w * rowCount + it++) * 4 + 2] = slice[j++];
-    //     data[ (i * w + w * w * rowCount + it++) * 4 + 3] = slice[j++];
-    //     //console.log("current value", value);
-    //   }
-    // }
+        if ( slice[j+0] > 0 ) {
+          data[ (i * w + w * w * rowCount + w - it - 1) * 4 + 0] = slice[j+0];
+        } 
+
+        if (slice [j + 1] > 0) {
+          data[ (i * w + w * w * rowCount + w - it - 1) * 4 + 1] = slice[j+1];
+        } 
+
+        if (slice [j + 2] > 0) {
+          data[ (i * w + w * w * rowCount + w - it - 1) * 4 + 2] = slice[j+2];
+        }
+        
+        if (slice[j + 3 ] > 0) {
+          data[ (i * w + w * w * rowCount + w - it - 1) * 4 + 3] = slice[j+3];
+        }
+        //console.log("current value",  (i * w + w * w * rowCount + w - it - 1));
+        j += 4;
+        it++
+      }
+    }
 
 
-    // for (let i = 0; i < this.voxelTextureSize; i++ ) { 
-    //   let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
-    //   gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.zTexture, 0, i);
-    //   gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA,  gl.UNSIGNED_BYTE, slice, 0);
+    // Add to Z texture
+    for (let i = 0; i < this.voxelTextureSize; i++ ) { 
+      let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.zTexture, 0, i);
+      gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA,  gl.UNSIGNED_BYTE, slice, 0);
 
-    //   for (let j = 0; j < this.voxelTextureSize * this.voxelTextureSize * 4; j++) {
+      for (let j = 0; j < this.voxelTextureSize * this.voxelTextureSize * 4; j++) {
 
-    //     if (slice[j] > 0)
-    //       data[this.voxelTextureSize * this.voxelTextureSize * i * 4 + j] = slice[ j];
-    //   }
-    // }
+        if (slice[j] > 0)
+          data[this.voxelTextureSize * this.voxelTextureSize * i * 4 + j] = slice[ j];
+      }
+    }
 
   ///  gl.bindTexture(gl.TEXTURE_3D, this.voxelTexture);
     // Upload to 3d textuer
@@ -437,6 +458,9 @@ class Renderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    t1 = performance.now();
+    console.log("Voxelization took " + (t1 - t0) + " milliseconds.")
     //gl.enable(gl.CULL_FACE); 
     //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas  
   }

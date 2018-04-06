@@ -40,7 +40,7 @@ class VoxelDebugShader {
             precision highp float;      
             precision mediump sampler3D;                  
 
-            #define STEP_LENGTH 4.0
+            #define STEP_LENGTH 1.0
             #define INV_STEP_LENGTH (1.0 / STEP_LENGTH)
             
             const int MAX_POINT_LIGHTS = 8;
