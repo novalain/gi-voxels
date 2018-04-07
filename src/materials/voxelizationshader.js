@@ -33,44 +33,13 @@ class VoxelizationShader {
             out vec3 vNormalWorld;
             out vec3 vPositionWorld;
 
-            uniform mat4 viewProjZ;
-            uniform bool xAxis;
-            uniform bool yAxis;
+            uniform mat4 viewProjection;
 
             void main() {
-                //vert.UV = vertexUV;
-                //vert.position_depth = DepthModelViewProjectionMatrix * vec4(vertexPosition_model, 1);
-                //vert.position_depth.xyz = vert.position_depth.xyz * 0.5f + 0.5f;
-                
-                // To projected space!!
                 vUv = uv;
                 vPositionWorld = vec3(modelMatrix * vec4(position, 1.0));
-                //vNormalWorld = normalize(mat3(transpose(inverse(modelMatrix))) * normal);
                 vNormalWorld = vec3(normalMatrix * vec4(normal, 1.0));
-                // We need to project and rasterize with the viewport
-
-                vec3 pos = position;
-                mat4 resProj = viewProjZ; 
-                if (xAxis) {
-                    pos.y = position.y;
-                    pos.x = position.z;
-                    pos.z = 64.0 - position.x;
-                } 
-              
-                else if (yAxis) {
-                    //pos.z = 64.0 - position.y;
-                    //pos.y = 64.0 - position.z;
-                    //pos.x = position.x;
-
-                    // mat4 scale =  mat4( 1.0, 0, 0, 0,
-                    //                     0, 1.0, 0, 0,
-                    //                     0, 0, 1.0, 0,
-                    //                     0, 0, 0, 1.0);
-
-                    //resProj = scale * resProj ;
-                }
-
-                gl_Position = resProj * modelMatrix *  vec4(pos, 1); 
+                gl_Position = viewProjection * modelMatrix *  vec4(position, 1); 
             }
         `;
 
@@ -129,14 +98,6 @@ class VoxelizationShader {
         #define QUADRATIC 1.0
 
         layout(location = 0) out vec4 layer0;
-        // layout(location = 1) out vec4 layer1;
-        // layout(location = 2) out vec4 layer2;
-        // layout(location = 3) out vec4 layer3;
-        // layout(location = 4) out vec4 layer4;
-        // layout(location = 5) out vec4 layer5;
-        // layout(location = 6) out vec4 layer6;
-        // layout(location = 7) out vec4 layer7;
-
    
         // Returns an attenuation factor given a distance.
         float attenuate(float dist) { 
@@ -145,7 +106,6 @@ class VoxelizationShader {
         }
         
         vec3 calculatePointLight(PointLight light){
-
             vec3 vertexPosition;
             vertexPosition = vPositionWorld;
 
@@ -158,11 +118,10 @@ class VoxelizationShader {
 
         void main() {
             vec3 color = vec3(0.0f);
-            for(int i = 0; i < 1; ++i) {
+            for(int i = 0; i < int(numLights); ++i) {
                 color += calculatePointLight(pointLights[i]);
             }
 
-            layer0 = vec4(1.0);
             if (hasDiffuseMap) {
                 layer0 = vec4(color, 1.0) * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)); 
             } else {
