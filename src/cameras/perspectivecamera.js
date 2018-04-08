@@ -25,8 +25,10 @@ class PerspectiveCamera extends Object {
   }
 
   setFov(fov) {
-    this.fov = fov;
-    this.updateProjectionMatrix();
+    if (fov !== this.fov) {
+      this.fov = fov * (Math.PI / 180)
+      this.updateProjectionMatrix();
+    }
   }
 
   setTarget(dir) {

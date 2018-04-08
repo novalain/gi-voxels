@@ -13,6 +13,8 @@ import { vec3, mat3, mat4, quat, vec4 } from 'gl-matrix';
 class VoxelConeTracer {
   constructor(sceneScale, cubeSize, resolution, materialUBO, pointLightUBO, modelMatricesUBO, sceneUBO) {
     const gl = glContext();
+
+    this.sceneScale = sceneScale;
     this.voxelTextureSize = resolution;
     const cube = new Cube(cubeSize, cubeSize, cubeSize);
     this.cubeMesh = new Mesh(cube.geometry, cube.indices);
@@ -103,6 +105,11 @@ class VoxelConeTracer {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     this.voxelDebugShader.activate();
+
+    // Set uniforms
+    gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'mipmapLevel'), scene.gui.voxelMipmap);
+    gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'stepLength'), scene.gui.voxelDebugStepSize);
+    gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'sceneScale'), this.sceneScale);
   
     gl.uniform3fv(gl.getUniformLocation(this.voxelDebugShader.program, 'cameraPosition'), camera.position);
     gl.activeTexture(gl.TEXTURE0 + 0);
@@ -144,12 +151,12 @@ class VoxelConeTracer {
     this.voxelizationShader.activate();
     const program = this.voxelizationShader.program;
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);  
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
 
-    const sceneScale = 3000;
+    const sceneScale = this.sceneScale;
     // Render Y
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.yTexture);
     for (let i = 0; i < this.voxelTextureSize; i++ ) {

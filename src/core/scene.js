@@ -46,16 +46,13 @@ class Scene {
   }
 
   traverse(camera) {    
-
-
-
     const gui = this._gui;
     camera.updateProjectionMatrix(gui.orthoLeft, gui.orthoRight, gui.orthoBottom, gui.orthoTop, gui.orthoNear, gui.orthoFar);
 
      // console.log("campos", camera.position);
     // Update camera
     // TODO: Do this on change
-    // camera.setFov(this._gui.fov);
+    camera.setFov(this._gui.fov);
     // Update model and normal matrix
     for (let i = 0; i < this.objects.length; ++i) {
       this.objects[i].update();

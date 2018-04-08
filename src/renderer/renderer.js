@@ -34,7 +34,7 @@ class Renderer {
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
   
     this.standardShader = new StandardShader();
-    this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/3000, /*cubeSize*/2000, /*resolution*/512, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
+    this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/3000, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
 
     this.sceneUBO.bind();
     this.pointLightUBO.bind();
