@@ -254,9 +254,9 @@ class VoxelConeTracer {
       });
     }
 
-    var t1 = performance.now();
+    let t1 = performance.now();
     console.log("Voxel rendering took " + (t1 - t0) + " milliseconds.")
-
+   
     const vSize = this.voxelTextureSize;    
     let data = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * this.voxelTextureSize * 4);
     // X texture

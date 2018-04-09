@@ -20,7 +20,7 @@ class Renderer {
     let gl = glContext();
     console.log("amx draw buffers", gl.getParameter(gl.MAX_DRAW_BUFFERS));
 
-    this.voxelize = true;
+    this.voxelize = true; 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
     // With this declaration - does not work to put in float in here
