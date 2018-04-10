@@ -22,13 +22,15 @@ class ScreenSpaceImageShader {
             precision highp float;
             in vec2 vUv;
 
-            out vec4 outColor;
+            layout(location = 0) out vec4 outColor;
             
             uniform sampler2D Texture;
             
             void main(){
-                vec4 worldPosition = vec4(texture(Texture, vUv).rgb, 1.0);
-                outColor = worldPosition;
+                outColor = normalize(texture(Texture, vUv));
+                //vec3 res = vec3(worldPosition);
+
+                //outColor = vec4(normalize(res), 1.0);
                 //outColor = vec4(texture(Texture, vUv).rgb, 1.0);
             }
             

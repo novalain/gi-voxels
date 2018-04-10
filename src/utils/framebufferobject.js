@@ -7,7 +7,7 @@ class FrameBufferObject {
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
 
     gl.getExtension("EXT_color_buffer_float");
-    gl.getExtension("OES_texture_float_linear");
+    //gl.getExtension("OES_texture_float_linear"); We don't need linear filtering
 
     // Color attachment
     this.colorBuffer = gl.createTexture();
