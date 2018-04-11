@@ -20,7 +20,7 @@ class Renderer {
   }
 
   _initialize() {
-    context = canvas.getContext('webgl2', {antialias: false});
+    context = canvas.getContext('webgl2', {antialias: true});
 
     let gl = glContext();
     console.log("amx draw buffers", gl.getParameter(gl.MAX_DRAW_BUFFERS));
@@ -28,7 +28,7 @@ class Renderer {
     // Exists in 2 places now
     this.quad = new Quad();
     this.renderShadowMap = true;
-    this.voxelize = false; 
+    this.voxelize = true; 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
     // With this declaration - does not work to put in float in here
@@ -204,7 +204,7 @@ class Renderer {
       this.renderShadowMap = false;
     }
 
-    this._renderShadowMapToScreen();
+    //this._renderShadowMapToScreen();
 
     // For debug
     if (this.voxelize) {
