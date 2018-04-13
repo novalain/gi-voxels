@@ -18,6 +18,7 @@ class StandardShader {
             layout (std140) uniform sceneBuffer {
                 mat4 viewMatrix;
                 mat4 projectionMatrix;
+                mat4 depthMVP;
                 float numLights;
                 float numDirectionalLights;
             };
@@ -32,6 +33,7 @@ class StandardShader {
             out vec3 vPosViewSpace;
             out vec2 vUv;
             out vec3 worldPosVertex;
+            out vec4 positionDepth;
 
             out vec3 vNormalViewSpace;
             out vec3 vTangentViewSpace;
@@ -52,6 +54,10 @@ class StandardShader {
                     vBitangentViewSpace,
                     vNormalViewSpace
                 ));
+
+                positionDepth = depthMVP * vec4(position, 1.0);
+                positionDepth.xyz = positionDepth.xyz * 0.5 + 0.5;
+
                 worldPosVertex = vec3(modelViewMatrix  * vec4(position, 1.0));
                 vPosViewSpace = vec3(modelViewMatrix * vec4(position, 1.0));
                 vUv = uv;
@@ -62,6 +68,7 @@ class StandardShader {
         const fsSource = `#version 300 es
             precision mediump float;
             precision mediump int;
+            precision mediump sampler2DShadow;
 
             const int MAX_DIRECTIONAL_LIGHTS = 8;
             const int MAX_POINT_LIGHTS = 8;
@@ -69,6 +76,7 @@ class StandardShader {
             layout (std140) uniform sceneBuffer {
                 mat4 viewMatrix; // 64 0
                 mat4 projectionMatrix; // 64 64
+                mat4 depthMVP;
                 float numLights;
                 float numDirectionalLights;
             };
@@ -122,11 +130,13 @@ class StandardShader {
             uniform sampler2D bumpMap;
             uniform sampler2D specularMap;
             uniform sampler2D dissolveMap;
+            uniform sampler2DShadow shadowMap;
 
             in vec3 vPosViewSpace;
             in vec3 vNormalViewSpace;
 
             in vec3 worldPosVertex;
+            in vec4 positionDepth;
 
             in vec3 vTangentViewSpace;
             in vec3 vBitangentViewSpace;
@@ -174,7 +184,10 @@ class StandardShader {
 
                 diffuse = vec3(0);
                 spec  = vec3(0);
-                float intensity = max(dot(n, l), 0.0);
+
+                float visibility = texture(shadowMap, vec3(positionDepth.xy, (positionDepth.z - 0.0005)/positionDepth.w));
+                float intensity = visibility * max(dot(n, l), 0.0);
+                
                 if (intensity > 0.0) {
                     diffuse = Id * mdiffuse.xyz * intensity;
 
@@ -208,7 +221,10 @@ class StandardShader {
                 }          
 
                 ambientSum /= float(numLights);
-        
+
+                //float visibility = texture(shadowMap, vec3(positionDepth.xy, (positionDepth.z - 0.0005) / positionDepth.w));
+                
+
                 if (displayNormalMap && hasNormalMap) {
                     vec4 bumpColor = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y));
                     outColor = bumpColor;

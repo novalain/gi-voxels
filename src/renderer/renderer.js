@@ -28,7 +28,7 @@ class Renderer {
     // Exists in 2 places now
     this.quad = new Quad();
     this.renderShadowMap = true;
-    this.voxelize = true; 
+    this.voxelize = false; 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
     // With this declaration - does not work to put in float in here
@@ -37,14 +37,16 @@ class Renderer {
         ...mat4.create(), // normal 
     ]);
     this.guiUBO = new UniformBufferObject(new Float32Array(500));
-    this.sceneUBO = new UniformBufferObject(new Float32Array(400));
+    this.sceneUBO = new UniformBufferObject(new Float32Array(500));
     this.pointLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
-  
+    this.shadowMapResolution = 4096;
+    this.sceneScale = 3000;
+
     this.standardShader = new StandardShader();
     this.shadowShader = new ShadowShader();
     this.screenSpaceImageShader = new ScreenSpaceImageShader();
-    this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/3000, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
+    this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/this.sceneScale, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
 
     this.sceneUBO.bind();
     this.pointLightUBO.bind();
@@ -67,9 +69,7 @@ class Renderer {
     this.depthTexture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
 
-    //gl.getExtension('WEBGL_depth_texture');
-    //gl.getExtension("EXT_color_buffer_float");
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT16, 2048, 2048, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT16, this.shadowMapResolution, this.shadowMapResolution, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -81,19 +81,21 @@ class Renderer {
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
       console.error("FBO is not complete" + FrameBufferObject.checkFrameBufferStatus(gl.checkFramebufferStatus(gl.FRAMEBUFFER)));
     }
-    
+
     // Set up ortho camera
     this.shadowCam = new OrthographicCamera(
-      -1200.0,
-      1200.0,
-      -1200.0,
-      1200.0,
-      -2000.0,
-      2000.0); 
+      -this.sceneScale,
+      this.sceneScale,
+      -this.sceneScale,
+      this.sceneScale,
+      -this.sceneScale,
+      this.sceneScale); 
 
-      // Get point light position... direction i mean
+    // Get point light position... direction i mean
     this.shadowCam.position = vec3.fromValues(-0.3, 0.9, -0.25);
-    this.shadowCam.lookAt(0.0, 0.0, 0.0);
+    this.shadowCam.lookAt(vec3.fromValues(0.0, 0.0, 0.0));
+    this.shadowCam.MVP = mat4.create();
+    mat4.multiply(this.shadowCam.MVP, this.shadowCam.projectionMatrix, this.shadowCam.viewMatrix);
 
     // Set back normal FBO
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -150,11 +152,11 @@ class Renderer {
   _renderShadowMapToScreen() {
     const gl = glContext();
     this.screenSpaceImageShader.activate();
-    gl.activeTexture(gl.TEXTURE0 + 1);
+    gl.activeTexture(gl.TEXTURE0 + 0);
     gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
-    gl.uniform1i(gl.getUniformLocation(this.screenSpaceImageShader.program, 'Texture'), 1);
+    gl.uniform1i(gl.getUniformLocation(this.screenSpaceImageShader.program, 'Texture'), 0);
 
-    gl.viewport(0, 0, 600, 600);
+    gl.viewport(0, 0, 300, 300);
     this.quad.draw();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
@@ -189,11 +191,13 @@ class Renderer {
       scene.gui.displaySpecular
     ]);
 
+    const depthMVP = this.shadowCam.MVP;
     // TODO: Why doens't integers work? Float32Array??
     this.sceneUBO.update([
-      ...camera.viewMatrix, // Starts at multiple of base
+      ...camera.viewMatrix,
       ...camera.projectionMatrix,
-      scene.pointLights.length, // 4 bytes .. 
+      ...depthMVP,
+      scene.pointLights.length,
       scene.directionalLights.length
     ]);
 
@@ -204,7 +208,7 @@ class Renderer {
       this.renderShadowMap = false;
     }
 
-    //this._renderShadowMapToScreen();
+    this._renderShadowMapToScreen();
 
     // For debug
     if (this.voxelize) {
@@ -227,8 +231,14 @@ class Renderer {
     //3. Back to front for transparent
     // All objects rendered with the same shader
     this.standardShader.activate();
-    const program = this.standardShader.program;
+
     const gl = glContext();
+    const program = this.standardShader.program;
+
+    gl.activeTexture(gl.TEXTURE0 + 4);
+    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+    gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
+
     // Set the uniform block binding for the active program
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
@@ -251,7 +261,7 @@ class Renderer {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFBO);
     //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-   // gl.viewport(0, 0, 2048, 2048);
+    gl.viewport(0, 0, this.shadowMapResolution, this.shadowMapResolution);
 
     gl.uniformMatrix4fv(gl.getUniformLocation(this.shadowShader.program, 'depthView'), false, this.shadowCam.viewMatrix);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.shadowShader.program, 'depthProj'), false, this.shadowCam.projectionMatrix);

@@ -27,7 +27,9 @@ class ScreenSpaceImageShader {
             uniform sampler2D Texture;
             
             void main(){
-                outColor = normalize(texture(Texture, vUv));
+                float res = texture(Texture, vUv).r;
+                outColor = vec4(res, res, res, 1.0);
+
                 //vec3 res = vec3(worldPosition);
 
                 //outColor = vec4(normalize(res), 1.0);
