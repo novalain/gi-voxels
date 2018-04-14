@@ -55,8 +55,15 @@ class StandardShader {
                     vNormalViewSpace
                 ));
 
-                positionDepth = depthMVP * vec4(position, 1.0);
-                positionDepth.xyz = positionDepth.xyz * 0.5 + 0.5;
+                mat4 biasMatrix = mat4(
+                    0.5, 0.0, 0.0, 0.0,
+                    0.0, 0.5, 0.0, 0.0,
+                    0.0, 0.0, 0.5, 0.0,
+                    0.5, 0.5, 0.5, 1.0
+                    );
+
+                positionDepth = biasMatrix * depthMVP * vec4(position, 1.0);
+                //positionDepth.xyz = positionDepth.xyz * 0.5 + 0.5;
 
                 worldPosVertex = vec3(modelViewMatrix  * vec4(position, 1.0));
                 vPosViewSpace = vec3(modelViewMatrix * vec4(position, 1.0));
@@ -130,7 +137,7 @@ class StandardShader {
             uniform sampler2D bumpMap;
             uniform sampler2D specularMap;
             uniform sampler2D dissolveMap;
-            uniform sampler2DShadow shadowMap;
+            uniform sampler2D shadowMap;
 
             in vec3 vPosViewSpace;
             in vec3 vNormalViewSpace;
@@ -175,7 +182,7 @@ class StandardShader {
                     bn.y *= bumpIntensity;
                     n = normalize(bn);
                 } else {
-                    l = normalize(l);
+                    l = normalize(l)    ;
                     v = normalize(v);
                     n = normalize(n);
                 }   
@@ -185,9 +192,17 @@ class StandardShader {
                 diffuse = vec3(0);
                 spec  = vec3(0);
 
-                float visibility = texture(shadowMap, vec3(positionDepth.xy, (positionDepth.z - 0.0005)/positionDepth.w));
+                //float visibility = texture(shadowMap, vec3(positionDepth.xy, (positionDepth.z - 0.0005)/positionDepth.w));
+
+                float visibility = 1.0;
+                float bias = 0.005;
+                if ( texture( shadowMap, positionDepth.xy ).r  <  positionDepth.z - bias){
+                    visibility = 0.0;
+                }
+
                 float intensity = visibility * max(dot(n, l), 0.0);
-                
+
+
                 if (intensity > 0.0) {
                     diffuse = Id * mdiffuse.xyz * intensity;
 
