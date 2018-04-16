@@ -25,6 +25,7 @@ class VoxelizationShader {
             layout (std140) uniform sceneBuffer {
                 mat4 viewMatrix;
                 mat4 projectionMatrix;
+                mat4 depthMVP;
                 float numLights;
                 float numDirectionalLights;
             };
@@ -38,7 +39,7 @@ class VoxelizationShader {
             void main() {
                 vUv = uv;
                 vPositionWorld = vec3(modelMatrix * vec4(position, 1.0));
-                vNormalWorld = vec3(normalMatrix * vec4(normal, 1.0));
+                vNormalWorld = vec3(modelMatrix * vec4(normal, 1.0));
                 gl_Position = viewProjection * modelMatrix *  vec4(position, 1); 
             }
         `;
@@ -58,6 +59,7 @@ class VoxelizationShader {
         layout (std140) uniform sceneBuffer {
             mat4 viewMatrix;
             mat4 projectionMatrix;
+            mat4 depthMVP;
             float numLights;
             float numDirectionalLights;
         };
@@ -109,11 +111,12 @@ class VoxelizationShader {
             vec3 vertexPosition;
             vertexPosition = vPositionWorld;
 
-            vec3 direction = normalize( light.position - vertexPosition );
+            vec3 L = vec3(-0.3, 0.9, -0.25);
+            vec3 direction = normalize( L );
             float distanceToLight = distance(light.position, vertexPosition);
             float attenuation = attenuate(distanceToLight);
             float d = max(dot(normalize(vNormalWorld), direction), 0.0);
-            return d *attenuation * 0.15 * vec3(1.0); // intensity, light color missing
+            return d  * vec3(1.0); // intensity, light color missing
         }
 
         void main() {

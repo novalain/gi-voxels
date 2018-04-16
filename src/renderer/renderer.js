@@ -29,7 +29,7 @@ class Renderer {
     // Exists in 2 places now
     this.quad = new Quad();
     this.renderShadowMap = true;
-    this.voxelize = false; 
+    this.voxelize = true; 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
     // With this declaration - does not work to put in float in here

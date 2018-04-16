@@ -56,8 +56,8 @@ class ConeTracerShader {
 
                 tangentToWorld = mat3(
                     tangent_world,
-                    bitangent_world,
-                    normal_world
+                    normal_world,
+                    bitangent_world
                 );
 
                 gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
@@ -84,6 +84,7 @@ class ConeTracerShader {
             uniform sampler2D specularMap;
             uniform sampler2D dissolveMap;
             uniform sampler2D shadowMap;
+            uniform sampler3D voxelTexture;
 
             in vec2 vUv;
             in vec3 position_world;
@@ -93,6 +94,17 @@ class ConeTracerShader {
             in mat3 tangentToWorld;
 
             out vec4 outColor;
+
+            const int NUM_CONES = 6;
+            vec3 coneDirections[6] = vec3[]
+            (                            vec3(0, 1, 0),
+                                        vec3(0, 0.5, 0.866025),
+                                        vec3(0.823639, 0.5, 0.267617),
+                                        vec3(0.509037, 0.5, -0.700629),
+                                        vec3(-0.509037, 0.5, -0.700629),
+                                        vec3(-0.823639, 0.5, 0.267617)
+                                        );
+            float coneWeights[6] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
 
             layout (std140) uniform guiDataBuffer {
                 float texLod;
@@ -105,7 +117,57 @@ class ConeTracerShader {
                 vec3 bn = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y)).rgb * 2.0 - 1.0;
                 bn.x *= bumpIntensity;
                 bn.y *= bumpIntensity;
-                return normalize(tangentToWorld * bn);
+                return normalize(tangentToWorld * vec3(bn.x, 1.0, bn.y));
+            }
+
+            vec4 sampleVoxels(vec3 worldPosition, float lod) {
+                vec3 offset = vec3(1.0 / 256.0, 1.0 / 256.0, 0.0); // Why??
+                vec3 voxelTextureUV = worldPosition / (3000.0 * 0.5);
+                voxelTextureUV = voxelTextureUV * 0.5 + 0.5;// + offset;
+                return textureLod(voxelTexture, voxelTextureUV, lod);
+            }
+
+            vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
+                // lod level 0 mipmap is full size, level 1 is half that size and so on
+                float lod = 0.0;
+                vec3 color = vec3(0.0);
+                float alpha = 0.0;
+                occlusion = 0.0;
+            
+                float voxelWorldSize = 3000.0 / 256.0;
+                float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
+                vec3 startPos = position_world + normal_world * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
+                                                                                // self occlusion in flat surfaces
+            
+                while(dist < 100.0 && alpha < 0.95) {
+                    // smallest sample diameter possible is the voxel size
+                    float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
+                    float lodLevel = log2(diameter / voxelWorldSize);
+                    vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
+            
+                    // front-to-back compositing
+                    float a = (1.0 - alpha);
+                    color += a * voxelColor.rgb;
+                    alpha += a * voxelColor.a;
+                    //occlusion += a * voxelColor.a;
+                    occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
+                    dist += diameter * 0.5; // smoother
+                    //dist += diameter; // faster but misses more voxels
+                }
+            
+                return vec4(color, alpha);
+            }
+
+            vec3 calculateIndirectLightning(out float occlusion_out) {
+                vec4 color = vec4(0);
+                for(int i = 0; i < NUM_CONES; i++) {
+                    float occlusion = 0.0;
+                    // 60 degree cones -> tan(30) = 0.577
+                    // 90 degree cones -> tan(45) = 1.0
+                    color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
+                    occlusion_out += coneWeights[i] * occlusion;
+                }
+                return color.xyz;
             }
 
             void main() {
@@ -114,7 +176,7 @@ class ConeTracerShader {
 
                 if (alpha < 0.5) discard;
 
-                vec3 N = hasNormalMap ? calculateBumpNormal() : normal_world.xyz;
+                vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
                 vec3 L = normalize(vec3(-0.3, 0.9, -0.25));
 
                 vec3 diffuseReflection;
@@ -129,9 +191,11 @@ class ConeTracerShader {
                     vec3 directDiffuseLight = vec3(visibility * cosTheta);
 
                     // Indirect diffuse light
-                    vec3 indirectDiffuseLight = vec3(0.0);
+                    float occlusion = 0.0;
+                    vec3 indirectDiffuseLight = calculateIndirectLightning(occlusion);
+                    occlusion = min(1.0, 1.5 * occlusion); // Make occlusion brighter
 
-                    diffuseReflection = 2.0 * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
+                    diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {
