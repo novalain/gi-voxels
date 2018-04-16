@@ -4,6 +4,7 @@ import UniformBufferObject from '../utils/ubo.js';
 
 import ScreenSpaceImageShader from '../materials/screenspaceimageshader.js'
 import StandardShader from '../materials/standardshader.js'
+import ConeTracerShader from '../materials/conetracershader.js'
 import ShadowShader from '../materials/shadowshader.js'
 import VoxelConeTracer from '../gi/voxelconetracer.js'
 import Mesh from '../core/mesh.js'
@@ -43,6 +44,7 @@ class Renderer {
     this.shadowMapResolution = 4096;
     this.sceneScale = 3000;
 
+    this.coneTracerShader = new ConeTracerShader();
     this.standardShader = new StandardShader();
     this.shadowShader = new ShadowShader();
     this.screenSpaceImageShader = new ScreenSpaceImageShader();
@@ -230,20 +232,27 @@ class Renderer {
     //2. Batch together materials
     //3. Back to front for transparent
     // All objects rendered with the same shader
-    this.standardShader.activate();
+    this.coneTracerShader.activate();
 
     const gl = glContext();
-    const program = this.standardShader.program;
+    const program = this.coneTracerShader.program;
 
+    // Upload shadow map
     gl.activeTexture(gl.TEXTURE0 + 4);
     gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
     gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
 
+    // Upload voxel map
+    gl.activeTexture(gl.TEXTURE0 + 5);
+    gl.bindTexture(gl.TEXTURE_3D, this.voxelConeTracer.voxelTexture);
+    gl.uniform1i(gl.getUniformLocation(program, 'voxelTexture'), 5);
+
     // Set the uniform block binding for the active program
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
+    
+    //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+    //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
     
     // Render scene normal
     scene.objects.forEach(object => {
