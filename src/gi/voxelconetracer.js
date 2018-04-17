@@ -150,7 +150,7 @@ class VoxelConeTracer {
 
     this.voxelizationShader.activate();
     const program = this.voxelizationShader.program;
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+    //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);  
 
     gl.enable(gl.BLEND);
@@ -181,7 +181,7 @@ class VoxelConeTracer {
       gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjection'), false, viewProjection);
 
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     
       // Render scene
       scene.objects.forEach(object => {
@@ -213,7 +213,7 @@ class VoxelConeTracer {
 
       // Set uniforms
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     
       // Render scene
       scene.objects.forEach(object => {
@@ -246,7 +246,7 @@ class VoxelConeTracer {
 
       // Set uniforms
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-      gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+      //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
 
       // Render scene
       scene.objects.forEach(object => {

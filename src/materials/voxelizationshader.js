@@ -31,15 +31,13 @@ class VoxelizationShader {
             };
 
             out vec2 vUv;
-            out vec3 vNormalWorld;
-            out vec3 vPositionWorld;
+            out vec3 normal_world;
 
             uniform mat4 viewProjection;
 
             void main() {
                 vUv = uv;
-                vPositionWorld = vec3(modelMatrix * vec4(position, 1.0));
-                vNormalWorld = vec3(modelMatrix * vec4(normal, 1.0));
+                normal_world = vec3(modelMatrix * vec4(normal, 1.0));
                 gl_Position = viewProjection * modelMatrix *  vec4(position, 1); 
             }
         `;
@@ -49,12 +47,7 @@ class VoxelizationShader {
         precision highp int;
 
         in vec2 vUv;
-        in vec3 vNormalWorld;
-        in vec3 vPositionWorld;
-
-        const int MAX_POINT_LIGHTS = 8;
-
-        uniform int renderTargetLayer;
+        in vec3 normal_world;
 
         layout (std140) uniform sceneBuffer {
             mat4 viewMatrix;
@@ -81,56 +74,18 @@ class VoxelizationShader {
         uniform sampler2D specularMap;
         uniform sampler2D dissolveMap;
 
-        struct PointLight {
-            vec3 position;
-            vec4 color;
-            float intensity;
-        };
-
-        layout (std140) uniform pointLightsBuffer {
-            PointLight pointLights[MAX_POINT_LIGHTS];
-        };
-
-        uniform bool xAxis;
-
-        // Lighting attenuation factors.
-        #define DIST_FACTOR 1.1 /* Distance is multiplied by this when calculating attenuation. */
-        #define CONSTANT 1.0
-        #define LINEAR 0.0
-        #define QUADRATIC 1.0
-
         layout(location = 0) out vec4 layer0;
    
-        // Returns an attenuation factor given a distance.
-        float attenuate(float dist) { 
-            dist *= DIST_FACTOR; 
-            return 1.0 / (CONSTANT);// + LINEAR * dist;// + QUADRATIC * dist * dist); 
-        }
-        
-        vec3 calculatePointLight(PointLight light){
-            vec3 vertexPosition;
-            vertexPosition = vPositionWorld;
-
-            vec3 L = vec3(-0.3, 0.9, -0.25);
-
-            //vec3 L = light.position - vertexPosition;
-            vec3 direction = normalize( L );
-            float distanceToLight = distance(light.position, vertexPosition);
-            float attenuation = attenuate(distanceToLight);
-            float d = max(dot(normalize(vNormalWorld), direction), 0.0);
-            return d * vec3(1.0); // intensity, light color missing
-        }
-
         void main() {
-            vec3 color = vec3(0.0f);
-            for(int i = 0; i < int(numLights); ++i) {
-                color += calculatePointLight(pointLights[i]);
-            }
+        
+            vec3 L = normalize(vec3(-0.3, 0.9, -0.25));
+            vec3 N = normalize(normal_world);
+            float cosTheta = max(dot(N, L), 0.0);
 
             if (hasDiffuseMap) {
-                layer0 = vec4(color, 1.0) * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)); 
+                layer0 = cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)); 
             } else {
-                layer0 = vec4(color, 1.0);
+                layer0 = cosTheta * vec4(1.0);
             }        
         }
     `;
