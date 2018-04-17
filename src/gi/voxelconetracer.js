@@ -127,7 +127,7 @@ class VoxelConeTracer {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
   
-  voxelize(scene, camera) {
+  voxelize(scene, camera, depthTexture) {
     var t0 = performance.now();
     const gl = glContext();
     gl.viewport(0, 0, this.voxelTextureSize, this.voxelTextureSize);
@@ -150,6 +150,11 @@ class VoxelConeTracer {
 
     this.voxelizationShader.activate();
     const program = this.voxelizationShader.program;
+        // Upload shadow map
+    gl.activeTexture(gl.TEXTURE0 + 4);
+    gl.bindTexture(gl.TEXTURE_2D, depthTexture);
+    gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
+
     //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);  
 

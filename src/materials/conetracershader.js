@@ -31,7 +31,7 @@ class ConeTracerShader {
             out vec2 vUv;
             out vec3 position_world;
             out vec4 position_depth;
-            
+
             out vec3 normal_world;
             out mat3 tangentToWorld;
 
@@ -64,8 +64,8 @@ class ConeTracerShader {
             }
         `;
 
-        const fsSource = `#version 300 es     
-            precision highp float;      
+        const fsSource = `#version 300 es
+            precision highp float;
             precision mediump sampler3D;
 
             layout (std140) uniform materialBuffer {
@@ -133,28 +133,28 @@ class ConeTracerShader {
                 vec3 color = vec3(0.0);
                 float alpha = 0.0;
                 occlusion = 0.0;
-            
+
                 float voxelWorldSize = 3000.0 / 256.0;
                 float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
                 vec3 startPos = position_world + normal_world * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
                                                                                 // self occlusion in flat surfaces
-            
+
                 while(dist < 100.0 && alpha < 0.95) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
                     float lodLevel = log2(diameter / voxelWorldSize);
                     vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
-            
+
                     // front-to-back compositing
                     float a = (1.0 - alpha);
                     color += a * voxelColor.rgb;
                     alpha += a * voxelColor.a;
                     //occlusion += a * voxelColor.a;
                     occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
-                    //dist += diameter * 0.5; // smoother
-                    dist += diameter; // faster but misses more voxels
+                    dist += diameter * 0.5; // smoother
+                    //dist += diameter; // faster but misses more voxels
                 }
-            
+
                 return vec4(color, alpha);
             }
 
@@ -182,8 +182,8 @@ class ConeTracerShader {
                 vec3 diffuseReflection;
                 {
                     float visibility = 1.0;
-                    if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005){
-                        visibility = 0.0;
+                    if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.0005){
+                        visibility = texture( shadowMap, position_depth.xy ).r;
                     }
 
                     // Direct diffuse light
@@ -192,10 +192,10 @@ class ConeTracerShader {
 
                     // Indirect diffuse light
                     float occlusion = 0.0;
-                    vec3 indirectDiffuseLight = calculateIndirectLightning(occlusion);
+                    vec3 indirectDiffuseLight = 4.0 * calculateIndirectLightning(occlusion);
                     occlusion = min(1.0, 1.5 * occlusion); // Make occlusion brighter
 
-                    diffuseReflection = 10.0 * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
+                    diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {

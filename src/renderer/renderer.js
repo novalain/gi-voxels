@@ -214,7 +214,7 @@ class Renderer {
 
     // For debug
     if (this.voxelize) {
-      this.voxelConeTracer.voxelize(scene, camera);
+      this.voxelConeTracer.voxelize(scene, camera, this.depthTexture);
       this.voxelize = false;
     }
 

@@ -16,7 +16,7 @@ class VoxelizationShader {
 
             layout(location = 3) in vec3 tangent;
             layout(location = 4) in vec3 bitangent;
-           
+
             layout (std140) uniform modelMatrices {
                 mat4 modelMatrix;
                 mat4 normalMatrix;
@@ -32,22 +32,33 @@ class VoxelizationShader {
 
             out vec2 vUv;
             out vec3 normal_world;
+            out vec4 position_depth;
 
             uniform mat4 viewProjection;
 
             void main() {
+                mat4 biasMatrix = mat4(
+                    0.5, 0.0, 0.0, 0.0,
+                    0.0, 0.5, 0.0, 0.0,
+                    0.0, 0.0, 0.5, 0.0,
+                    0.5, 0.5, 0.5, 1.0
+                );
+                position_depth = biasMatrix * depthMVP * vec4(position, 1.0);
+
                 vUv = uv;
                 normal_world = vec3(modelMatrix * vec4(normal, 1.0));
-                gl_Position = viewProjection * modelMatrix *  vec4(position, 1); 
+                gl_Position = viewProjection * modelMatrix *  vec4(position, 1.0);
             }
         `;
 
-    const fsSource = `#version 300 es            
+    const fsSource = `#version 300 es
         precision highp float;
         precision highp int;
+        precision mediump sampler2DShadow;
 
         in vec2 vUv;
         in vec3 normal_world;
+        in vec4 position_depth;
 
         layout (std140) uniform sceneBuffer {
             mat4 viewMatrix;
@@ -73,23 +84,33 @@ class VoxelizationShader {
         uniform sampler2D bumpMap;
         uniform sampler2D specularMap;
         uniform sampler2D dissolveMap;
+        uniform sampler2D shadowMap;
 
         layout(location = 0) out vec4 layer0;
-   
+
         void main() {
-        
             vec3 L = normalize(vec3(-0.3, 0.9, -0.25));
             vec3 N = normalize(normal_world);
-            float cosTheta = max(dot(N, L), 0.0);
+
+
+            //float visibility = texture(shadowMap, vec3(position_depth.xy, position_depth.z / position_depth.w), 0.0005);
+
+            float visibility = 1.0;
+            if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.0005){
+                visibility = 0.05;
+            }
+
+            float cosTheta = visibility *  max(dot(N, L), 0.0);
 
             if (hasDiffuseMap) {
-                layer0 = cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)); 
+                layer0 = cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
             } else {
                 layer0 = cosTheta * vec4(1.0);
-            }        
+            }
+
+            layer0.a = 1.0;
         }
     `;
-            
 
     const gl = glContext();
 
