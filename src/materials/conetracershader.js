@@ -24,8 +24,7 @@ class ConeTracerShader {
                 mat4 viewMatrix;
                 mat4 projectionMatrix;
                 mat4 depthMVP;
-                float numLights;
-                float numDirectionalLights;
+                vec3 directional_world;
             };
 
             out vec2 vUv;
@@ -79,12 +78,22 @@ class ConeTracerShader {
                 bool hasDissolveMap; // 4 64
             };
 
+            layout (std140) uniform sceneBuffer {
+                mat4 viewMatrix;
+                mat4 projectionMatrix;
+                mat4 depthMVP;
+                vec3 directional_world;
+            };
+
             uniform sampler2D textureMap;
             uniform sampler2D bumpMap;
             uniform sampler2D specularMap;
             uniform sampler2D dissolveMap;
             uniform sampler2D shadowMap;
             uniform sampler3D voxelTexture;
+
+            uniform float sceneScale;
+            uniform float voxelResolution;
 
             in vec2 vUv;
             in vec3 position_world;
@@ -107,8 +116,11 @@ class ConeTracerShader {
             float coneWeights[6] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
 
             layout (std140) uniform guiDataBuffer {
-                float texLod;
                 float bumpIntensity;
+                float indirectMultiplier;
+                float directMultiplier;
+                float occlusionMultiplier;
+                float voxelConeStepSize;
                 bool displayNormalMap;
                 bool displaySpecularMap;
             };
@@ -121,9 +133,8 @@ class ConeTracerShader {
             }
 
             vec4 sampleVoxels(vec3 worldPosition, float lod) {
-                vec3 offset = vec3(1.0 / 256.0, 1.0 / 256.0, 0.0); // Why??
-                vec3 voxelTextureUV = worldPosition / (3000.0);
-                voxelTextureUV = voxelTextureUV * 0.5 + 0.5;// + offset;
+                vec3 voxelTextureUV = worldPosition / sceneScale;
+                voxelTextureUV = voxelTextureUV * 0.5 + 0.5;
                 return textureLod(voxelTexture, voxelTextureUV, lod);
             }
 
@@ -134,7 +145,7 @@ class ConeTracerShader {
                 float alpha = 0.0;
                 occlusion = 0.0;
 
-                float voxelWorldSize = 3000.0 / 256.0;
+                float voxelWorldSize = sceneScale / voxelResolution;
                 float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
                 vec3 startPos = position_world + normal_world * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
                                                                                 // self occlusion in flat surfaces
@@ -151,7 +162,7 @@ class ConeTracerShader {
                     alpha += a * voxelColor.a;
                     //occlusion += a * voxelColor.a;
                     occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
-                    dist += diameter * 0.5; // smoother
+                    dist += diameter * voxelConeStepSize; // smoother
                     //dist += diameter; // faster but misses more voxels
                 }
 
@@ -177,24 +188,25 @@ class ConeTracerShader {
                 if (alpha < 0.5) discard;
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
-                vec3 L = normalize(vec3(-0.3, 0.9, -0.25));
+                vec3 L = normalize(directional_world);
 
                 vec3 diffuseReflection;
                 {
                     float visibility = 1.0;
                     if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.0005){
-                        visibility = texture( shadowMap, position_depth.xy ).r;
+                        //visibility = indirectMultiplier > 0.0 ? texture( shadowMap, position_depth.xy ).r : 0.0;
+                        visibility = 0.0;
                     }
 
                     // Direct diffuse light
                     float cosTheta = max(0.0, dot(N, L));
-                    vec3 directDiffuseLight = vec3(visibility * cosTheta);
+                    vec3 directDiffuseLight = directMultiplier * vec3(visibility * cosTheta);
 
                     // Indirect diffuse light
                     float occlusion = 0.0;
-                    vec3 indirectDiffuseLight = 8.0 * calculateIndirectLightning(occlusion);
-                    occlusion = min(1.0, 1.5 * occlusion); // Make occlusion brighter
-
+                    vec3 indirectDiffuseLight = indirectMultiplier * 2.0 * calculateIndirectLightning(occlusion);
+                    occlusion = min(1.0, occlusionMultiplier * occlusion); // Make occlusion brighter
+                    //occlusion = occlusionMultiplier * occlusion;
                     diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 

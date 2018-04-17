@@ -185,8 +185,11 @@ class Renderer {
 
   _internalRender(scene, camera) {
     this.guiUBO.update([
-      scene.gui.diffuseLod,
       scene.gui.bumpIntensity,
+      scene.gui.indirectLightningMultiplier,
+      scene.gui.directLightningMultiplier,
+      scene.gui.occlusionMultiplier,
+      scene.gui.voxelConeStepSize,
       scene.gui.displayBump,
       scene.gui.displaySpecular
     ]);
@@ -197,8 +200,7 @@ class Renderer {
       ...camera.viewMatrix,
       ...camera.projectionMatrix,
       ...depthMVP,
-      scene.pointLights.length,
-      scene.directionalLights.length
+      ...scene.directionalLights[0].direction
     ]);
 
     this._uploadLightning(scene, camera);
@@ -208,7 +210,9 @@ class Renderer {
       this.renderShadowMap = false;
     }
 
-    this._renderShadowMapToScreen();
+    if (scene.gui.displayShadowMapTextureQuad) {
+      this._renderShadowMapToScreen();
+    }
 
     // For debug
     if (this.voxelize) {

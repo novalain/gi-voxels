@@ -26,8 +26,7 @@ class VoxelizationShader {
                 mat4 viewMatrix;
                 mat4 projectionMatrix;
                 mat4 depthMVP;
-                float numLights;
-                float numDirectionalLights;
+                vec3 directional_world;
             };
 
             out vec2 vUv;
@@ -64,8 +63,7 @@ class VoxelizationShader {
             mat4 viewMatrix;
             mat4 projectionMatrix;
             mat4 depthMVP;
-            float numLights;
-            float numDirectionalLights;
+            vec3 directional_world;
         };
 
         layout (std140) uniform materialBuffer {
@@ -89,15 +87,14 @@ class VoxelizationShader {
         layout(location = 0) out vec4 layer0;
 
         void main() {
-            vec3 L = normalize(vec3(-0.3, 0.9, -0.25));
+            vec3 L = normalize(directional_world);
             vec3 N = normalize(normal_world);
-
 
             //float visibility = texture(shadowMap, vec3(position_depth.xy, position_depth.z / position_depth.w), 0.0005);
 
             float visibility = 1.0;
             if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.0005){
-                visibility = 0.05;
+                visibility = 0.2;
             }
 
             float cosTheta = visibility *  max(dot(N, L), 0.0);

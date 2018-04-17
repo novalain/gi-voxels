@@ -22,12 +22,15 @@ class Gui {
     this.voxelMipmap = 0.0;
     this.voxelDebugStepSize = 5.0;
 
-    this.voxelConeStepSize = 1.0;
+    this.voxelConeStepSize = 0.6;
     this.indirectLightningMultiplier = 4.0;
     this.directLightningMultiplier = 2.0;
+    this.occlusionMultiplier = 1.0;
 
     this._voxelFolder.add(this, 'indirectLightningMultiplier', 0.0, 10.0);
     this._voxelFolder.add(this, 'directLightningMultiplier', 0.0, 10.0);
+    this._voxelFolder.add(this, 'occlusionMultiplier', 0.0, 5.0);
+    this._voxelFolder.add(this, 'voxelConeStepSize', 0.1, 2.0);
 
     this._specularMap = this._gui.add(this, 'displaySpecular');
     this._bumpMap = this._gui.add(this, 'displayBump');

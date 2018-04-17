@@ -361,6 +361,8 @@ class VoxelConeTracer {
     // Set the uniform block binding for the active program
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), guiUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), sceneUBO.location);
+    gl.uniform1f(gl.getUniformLocation(program, 'sceneScale'), this.sceneScale);
+    gl.uniform1f(gl.getUniformLocation(program, 'voxelResolution'), this.voxelTextureSize);
 
     // Render scene normal
     scene.objects.forEach(object => {
