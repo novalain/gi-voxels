@@ -188,6 +188,7 @@ class Renderer {
       scene.gui.bumpIntensity,
       scene.gui.indirectLightningMultiplier,
       scene.gui.directLightningMultiplier,
+      scene.gui.specularLightningMultiplier,
       scene.gui.occlusionMultiplier,
       scene.gui.voxelConeStepSize,
       scene.gui.displayBump,

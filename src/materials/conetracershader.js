@@ -94,6 +94,7 @@ class ConeTracerShader {
 
             uniform float sceneScale;
             uniform float voxelResolution;
+            uniform vec3 camera_world;
 
             in vec2 vUv;
             in vec3 position_world;
@@ -119,6 +120,7 @@ class ConeTracerShader {
                 float bumpIntensity;
                 float indirectMultiplier;
                 float directMultiplier;
+                float specularMultiplier;
                 float occlusionMultiplier;
                 float voxelConeStepSize;
                 bool displayNormalMap;
@@ -189,6 +191,7 @@ class ConeTracerShader {
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
                 vec3 L = normalize(directional_world);
+                vec3 E = normalize(camera_world);
 
                 vec3 diffuseReflection;
                 {
@@ -210,10 +213,24 @@ class ConeTracerShader {
                     diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 
+                // Calculate specular light
+                vec3 specularReflection;
+                {
+                    vec4 specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                    specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
+                    vec3 reflectDir = normalize(-E - 2.0 * dot(-E, N) * N);
+
+                    // Maybe fix so that the cone doesnt trace below the plane defined by the surface normal.
+                    // For example so that the floor doesnt reflect itself when looking at it with a small angle
+                    float specularOcclusion;
+                    vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
+                    specularReflection = 2.0 * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
+                }
+
                 if (displayNormalMap && hasNormalMap) {
                     outColor = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y));
                 } else {
-                    outColor = vec4(diffuseReflection, 1.0);
+                    outColor = vec4(diffuseReflection + specularReflection, alpha);
                 }
             }
     `;

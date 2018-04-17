@@ -33,12 +33,12 @@ class Scene {
       const light = object;
       this.directionalLights.push(light);
 
-      const lightsGui = this._gui.lights;
-      const lightsSubFolder = lightsGui.addFolder("Directional Light " + this.directionalLights.length);
+      // const lightsGui = this._gui.lights;
+      // const lightsSubFolder = lightsGui.addFolder("Directional Light " + this.directionalLights.length);
 
-      lightsSubFolder.add(light.direction, 'x', -1000, 1000).name("Dir x");
-      lightsSubFolder.add(light.direction, 'y', -1000, 1000).name("Dir y");
-      lightsSubFolder.add(light.direction, 'z', -1000, 1000).name("Dir z");
+      // lightsSubFolder.add(light.direction, 'x', -1000, 1000).name("Dir x");
+      // lightsSubFolder.add(light.direction, 'y', -1000, 1000).name("Dir y");
+      // lightsSubFolder.add(light.direction, 'z', -1000, 1000).name("Dir z");
       return;
     }
 
