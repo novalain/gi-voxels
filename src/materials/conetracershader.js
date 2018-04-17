@@ -192,7 +192,7 @@ class ConeTracerShader {
 
                     // Indirect diffuse light
                     float occlusion = 0.0;
-                    vec3 indirectDiffuseLight = 4.0 * calculateIndirectLightning(occlusion);
+                    vec3 indirectDiffuseLight = 8.0 * calculateIndirectLightning(occlusion);
                     occlusion = min(1.0, 1.5 * occlusion); // Make occlusion brighter
 
                     diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;

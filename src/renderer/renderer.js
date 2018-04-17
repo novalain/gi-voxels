@@ -4,7 +4,6 @@ import UniformBufferObject from '../utils/ubo.js';
 
 import ScreenSpaceImageShader from '../materials/screenspaceimageshader.js'
 import StandardShader from '../materials/standardshader.js'
-import ConeTracerShader from '../materials/conetracershader.js'
 import ShadowShader from '../materials/shadowshader.js'
 import VoxelConeTracer from '../gi/voxelconetracer.js'
 import Mesh from '../core/mesh.js'
@@ -44,8 +43,7 @@ class Renderer {
     this.shadowMapResolution = 4096;
     this.sceneScale = 3000;
 
-    this.coneTracerShader = new ConeTracerShader();
-    this.standardShader = new StandardShader();
+    //this.standardShader = new StandardShader();
     this.shadowShader = new ShadowShader();
     this.screenSpaceImageShader = new ScreenSpaceImageShader();
     this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/this.sceneScale, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
@@ -214,51 +212,52 @@ class Renderer {
 
     // For debug
     if (this.voxelize) {
-      this.voxelConeTracer.voxelize(scene, camera, this.depthTexture);
+      this.voxelConeTracer.voxelize(scene, camera, this.depthTexture, this.sceneUBO, this.materialUBO, this.modelMatricesUBO);
       this.voxelize = false;
     }
 
     if (scene.gui.showVoxels) {
       // Render debug scene
-      this.voxelConeTracer.renderVoxelDebug(scene, camera);
+      this.voxelConeTracer.renderVoxelDebug(scene, camera, this.sceneUBO);
     } else {
-      this._renderScene(scene, camera);
+      //this._renderScene(scene, camera);
+      this.voxelConeTracer.render(scene, camera, this.depthTexture, this.guiUBO, this.sceneUBO, this.materialUBO, this.modelMatricesUBO);
     }
   }
 
-  _renderScene(scene, camera) {
-    // TODO:
-    //1. Front to back for opaque
-    //2. Batch together materials
-    //3. Back to front for transparent
-    // All objects rendered with the same shader
-    this.coneTracerShader.activate();
+  // _renderScene(scene, camera) {
+  //   // TODO:
+  //   //1. Front to back for opaque
+  //   //2. Batch together materials
+  //   //3. Back to front for transparent
+  //   // All objects rendered with the same shader
+  //   this.coneTracerShader.activate();
 
-    const gl = glContext();
-    const program = this.coneTracerShader.program;
+  //   const gl = glContext();
+  //   const program = this.coneTracerShader.program;
 
-    // Upload shadow map
-    gl.activeTexture(gl.TEXTURE0 + 4);
-    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
-    gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
+  //   // Upload shadow map
+  //   gl.activeTexture(gl.TEXTURE0 + 4);
+  //   gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+  //   gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
 
-    // Upload voxel map
-    gl.activeTexture(gl.TEXTURE0 + 5);
-    gl.bindTexture(gl.TEXTURE_3D, this.voxelConeTracer.voxelTexture);
-    gl.uniform1i(gl.getUniformLocation(program, 'voxelTexture'), 5);
+  //   // Upload voxel map
+  //   gl.activeTexture(gl.TEXTURE0 + 5);
+  //   gl.bindTexture(gl.TEXTURE_3D, this.voxelConeTracer.voxelTexture);
+  //   gl.uniform1i(gl.getUniformLocation(program, 'voxelTexture'), 5);
 
-    // Set the uniform block binding for the active program
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
-    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-    
-    //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
-    //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
-    
-    // Render scene normal
-    scene.objects.forEach(object => {
-      this._renderObject(object, scene, camera, program);
-    });
-  }
+  //   // Set the uniform block binding for the active program
+  //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
+  //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
+
+  //   //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
+  //   //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
+
+  //   // Render scene normal
+  //   scene.objects.forEach(object => {
+  //     this._renderObject(object, scene, camera, program);
+  //   });
+  // }
 
   _renderToShadowMap(scene, camera) {
     const gl = glContext();
