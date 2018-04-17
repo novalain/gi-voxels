@@ -122,7 +122,7 @@ class ConeTracerShader {
 
             vec4 sampleVoxels(vec3 worldPosition, float lod) {
                 vec3 offset = vec3(1.0 / 256.0, 1.0 / 256.0, 0.0); // Why??
-                vec3 voxelTextureUV = worldPosition / (3000.0 * 0.5);
+                vec3 voxelTextureUV = worldPosition / (3000.0);
                 voxelTextureUV = voxelTextureUV * 0.5 + 0.5;// + offset;
                 return textureLod(voxelTexture, voxelTextureUV, lod);
             }
@@ -151,8 +151,8 @@ class ConeTracerShader {
                     alpha += a * voxelColor.a;
                     //occlusion += a * voxelColor.a;
                     occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
-                    dist += diameter * 0.5; // smoother
-                    //dist += diameter; // faster but misses more voxels
+                    //dist += diameter * 0.5; // smoother
+                    dist += diameter; // faster but misses more voxels
                 }
             
                 return vec4(color, alpha);
@@ -195,7 +195,7 @@ class ConeTracerShader {
                     vec3 indirectDiffuseLight = calculateIndirectLightning(occlusion);
                     occlusion = min(1.0, 1.5 * occlusion); // Make occlusion brighter
 
-                    diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
+                    diffuseReflection = 10.0 * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {

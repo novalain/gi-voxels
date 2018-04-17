@@ -112,11 +112,13 @@ class VoxelizationShader {
             vertexPosition = vPositionWorld;
 
             vec3 L = vec3(-0.3, 0.9, -0.25);
+
+            //vec3 L = light.position - vertexPosition;
             vec3 direction = normalize( L );
             float distanceToLight = distance(light.position, vertexPosition);
             float attenuation = attenuate(distanceToLight);
             float d = max(dot(normalize(vNormalWorld), direction), 0.0);
-            return d  * vec3(1.0); // intensity, light color missing
+            return d * vec3(1.0); // intensity, light color missing
         }
 
         void main() {
