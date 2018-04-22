@@ -5,15 +5,11 @@ import Scene from './core/scene.js';
 import Mesh from './core/mesh.js';
 import PerspectiveCamera from './cameras/perspectivecamera.js';
 import OrthographicCamera from './cameras/orthographiccamera.js';
-import PhongMaterial from './materials/phongmaterial.js';
-import Material from './materials/material.js';
-import LambertMaterial from './materials/lambertmaterial.js';
 import OrbitControls from './cameras/orbitcontrols.js';
 import FlyControls from './cameras/flycontrols.js';
 import PointLight from './lights/pointlight.js';
 import DirectionalLight from './lights/directionallight.js';
 import ObjectLoader from './utils/objectloader.js';
-//import MaterialLoader from './utils/materialloader.js';
 import ResourceLoader from './utils/resourceloader.js';
 
 // TODO MOVE
@@ -45,8 +41,6 @@ Object.defineProperty(Float32Array.prototype, "z", {
 });
 
 export {
-  PhongMaterial,
-  LambertMaterial,
   ObjectLoader,
   Renderer,
   Cube,

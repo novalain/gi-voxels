@@ -126,8 +126,7 @@
           const objData = objMatData[0];
           for (let i = 0; i < objData.indices.length; ++i) {
             const mesh = new siick.Mesh(objData.objectData, objData.indices[i]); // Set up all buffers
-            const material = new siick.Material(objData.materialData.materialsByIndex[i]);
-            mesh.setMaterialData(material);
+            mesh.setMaterialData(objData.materialData.materialsByIndex[i]);
             scene.add(mesh);
           }
 

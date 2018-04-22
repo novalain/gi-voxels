@@ -9,6 +9,9 @@ class ConeTracerShader {
         const vsSource = `#version 300 es
             precision highp float;
 
+            // Cred https://turanszkij.wordpress.com/2017/08/30/voxel-based-global-illumination/
+            // https://github.com/Cigg/Voxel-Cone-Tracing/blob/master/shaders/standard.frag
+
             layout(location = 0) in vec3 position;
             layout(location = 1) in vec3 normal;
             layout(location = 2) in vec2 uv;
@@ -105,9 +108,11 @@ class ConeTracerShader {
 
             out vec4 outColor;
 
+            float voxelWorldSize;
+
             const int NUM_CONES = 6;
-            vec3 coneDirections[6] = vec3[]
-            (                            vec3(0, 1, 0),
+            vec3 coneDirections[6] = vec3[](                            
+                                        vec3(0, 1, 0),
                                         vec3(0, 0.5, 0.866025),
                                         vec3(0.823639, 0.5, 0.267617),
                                         vec3(0.509037, 0.5, -0.700629),
@@ -124,7 +129,7 @@ class ConeTracerShader {
                 float occlusionMultiplier;
                 float voxelConeStepSize;
                 bool displayNormalMap;
-                bool displaySpecularMap;
+                bool displayOcclusion;
             };
 
             vec3 calculateBumpNormal() {
@@ -134,38 +139,40 @@ class ConeTracerShader {
                 return normalize(tangentToWorld * vec3(bn.x, 1.0, bn.y));
             }
 
-            vec4 sampleVoxels(vec3 worldPosition, float lod) {
+            vec4 sampleVoxels(vec3 worldPosition, float mip) {
                 vec3 voxelTextureUV = worldPosition / sceneScale;
                 voxelTextureUV = voxelTextureUV * 0.5 + 0.5;
-                return textureLod(voxelTexture, voxelTextureUV, lod);
+                return textureLod(voxelTexture, voxelTextureUV, mip);
             }
 
             vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
-                // lod level 0 mipmap is full size, level 1 is half that size and so on
-                float lod = 0.0;
                 vec3 color = vec3(0.0);
                 float alpha = 0.0;
                 occlusion = 0.0;
 
-                float voxelWorldSize = sceneScale / voxelResolution;
+                // We need to offset the cone start position to avoid sampling its own voxel (self-occlusion):
+	            // Unfortunately, it will result in disconnection between nearby surfaces :(
                 float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
-                vec3 startPos = position_world + normal_world * voxelWorldSize; // Plus move away slightly in the normal direction to avoid
-                                                                                // self occlusion in flat surfaces
+                vec3 startPos = position_world + normal_world * voxelWorldSize;                             
 
-                while(dist < 100.0 && alpha < 0.95) {
+                float maxDistance = 50.0 * voxelWorldSize;
+
+                while(dist < maxDistance && alpha < 0.95) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
-                    float lodLevel = log2(diameter / voxelWorldSize);
-                    vec4 voxelColor = sampleVoxels(startPos + dist * direction, lodLevel);
+                    float mip = log2(diameter / voxelWorldSize);
+                    vec4 voxelColor = sampleVoxels(startPos + dist * direction, mip);
 
                     // front-to-back compositing
                     float a = (1.0 - alpha);
                     color += a * voxelColor.rgb;
                     alpha += a * voxelColor.a;
-                    //occlusion += a * voxelColor.a;
-                    occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
-                    dist += diameter * voxelConeStepSize; // smoother
-                    //dist += diameter; // faster but misses more voxels
+
+                    color += voxelColor.rgb;
+
+                    occlusion += a * voxelColor.a;
+                    
+                    dist += diameter * voxelConeStepSize;
                 }
 
                 return vec4(color, alpha);
@@ -180,14 +187,16 @@ class ConeTracerShader {
                     color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
                     occlusion_out += coneWeights[i] * occlusion;
                 }
+
+                occlusion_out = 1.0 - occlusion_out;
                 return color.xyz;
             }
 
             void main() {
+                voxelWorldSize = sceneScale / voxelResolution;
                 vec4 materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                 float alpha = materialColor.a;
-
-                if (alpha < 0.5) discard;
+                float occlusion = 0.0;
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
                 vec3 L = normalize(directional_world);
@@ -206,10 +215,9 @@ class ConeTracerShader {
                     vec3 directDiffuseLight = directMultiplier * vec3(visibility * cosTheta);
 
                     // Indirect diffuse light
-                    float occlusion = 0.0;
                     vec3 indirectDiffuseLight = indirectMultiplier * 2.0 * calculateIndirectLightning(occlusion);
                     occlusion = min(1.0, occlusionMultiplier * occlusion); // Make occlusion brighter
-                    //occlusion = occlusionMultiplier * occlusion;
+                    occlusion = occlusionMultiplier * occlusion;
                     diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 
@@ -224,11 +232,13 @@ class ConeTracerShader {
                     // For example so that the floor doesnt reflect itself when looking at it with a small angle
                     float specularOcclusion;
                     vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-                    specularReflection = 2.0 * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
+                    specularReflection = 2.0 * specularOcclusion * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {
                     outColor = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y));
+                } else if (displayOcclusion) {
+                    outColor = vec4(occlusion, occlusion, occlusion, 1.0);
                 } else {
                     outColor = vec4(diffuseReflection + specularReflection, alpha);
                 }

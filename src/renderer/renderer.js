@@ -25,9 +25,8 @@ class Renderer {
     let gl = glContext();
     console.log("amx draw buffers", gl.getParameter(gl.MAX_DRAW_BUFFERS));
 
-    // Exists in 2 places now
     this.quad = new Quad();
-    this.renderShadowMap = true;
+    this.renderToShadowMap = true;
     this.voxelize = true; 
     this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
     // True for all programs, keep in mesh ??
@@ -43,7 +42,6 @@ class Renderer {
     this.shadowMapResolution = 4096;
     this.sceneScale = 3000;
 
-    //this.standardShader = new StandardShader();
     this.shadowShader = new ShadowShader();
     this.screenSpaceImageShader = new ScreenSpaceImageShader();
     this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/this.sceneScale, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
@@ -138,15 +136,6 @@ class Renderer {
          l.intensity // vec4 16
        ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
     }
-
-    for (let i = 0; i < scene.directionalLights.length; ++i) {
-      const l = scene.directionalLights[i];
-      this.directionalLightUBO.update([
-        ...[l.directionViewSpace[0], l.directionViewSpace[1], l.directionViewSpace[2], 0.0], 
-        ...l.color,  // vec4 16
-        l.intensity // vec4 16
-      ], i * Renderer.LIGHT_DATA_CHUNK_SIZE);
-    }
   }
 
   _renderShadowMapToScreen() {
@@ -206,9 +195,9 @@ class Renderer {
 
     this._uploadLightning(scene, camera);
 
-    if (this.renderShadowMap) {
+    if (this.renderToShadowMap) {
       this._renderToShadowMap(scene, camera);
-      this.renderShadowMap = false;
+      this.renderToShadowMap = false;
     }
 
     if (scene.gui.displayShadowMapTextureQuad) {

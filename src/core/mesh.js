@@ -1,8 +1,5 @@
 import { glContext } from '../renderer/renderer.js';
 import Entity from './object.js';
-import GenericMaterial from '../materials/genericmaterial.js';
-import Shader from '../materials/shader.js'
-import SimpleShader from '../materials/simpleshader.js'
 import Texture from '../renderer/texture.js';
 // For storing normal matrix, which depends on camera and is specific per mesh and NOT per object
 import { mat4 } from 'gl-matrix';
@@ -14,12 +11,6 @@ class Mesh extends Entity {
     this._normalMatrix = mat4.create();
     this._geometry = geometry;
     this._indices = indices;
-    //this._shaders = [];
-    //this._indexCount = geometry.indices.length;
-    //for (let i = 0; i < geometry.indices.length; ++i) {
-    //  this._indexCounts.push(geometry.indices[i].length);
-    // }
-    //this._buffers = this._initializeBuffers();
     this._buffers = this._initializeBuffers();
   }
 
@@ -30,16 +21,8 @@ class Mesh extends Entity {
 
   set normalMatrix(normalMatrix) { this._normalMatrix = normalMatrix; }
 
-  // attachShader(materialData) {
-  //   // If we fetch material from file - don't bother setting up this buffer
-  //   Object.entries(materialData.materialIndices).forEach(([key, value]) => {
-  //     const material = materialData.materialsByIndex[value];
-  //     this._shaders.push(new SimpleShader(material));
-  //   });
-  // }
-  setMaterialData(material) {
-    this.materialData = material.materialData;
-    const materialData = this.materialData;
+  setMaterialData(materialData) {
+    this.materialData = materialData;
     if (materialData.mapSpecular) {
       this._specularMap = new Texture();
       this._specularMap.createTexture(materialData.mapSpecular.texture);
@@ -191,16 +174,12 @@ class Mesh extends Entity {
     const indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this._indices), gl.STATIC_DRAW);
-    //}  
   }
 
   draw() {
     const gl = glContext();
     gl.bindVertexArray(this._vao);
     gl.drawElements(gl.TRIANGLES, this._indices.length, gl.UNSIGNED_INT, 0); 
-    //this._material.activate();
-    //this._material.bindTextures();
-    //const programInfo = this._shaders[shaderId].programInfo;
   }
 }
 

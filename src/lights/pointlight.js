@@ -35,14 +35,13 @@ class PointLight extends Object {
     }
   }
 
-  get positionViewSpace() { return this._positionViewSpace; }
   get color() { return this._color; }
   get intensity() { return this._intensity; }
 
-  set positionViewSpace(psv) { this._positionViewSpace = psv; }
   set color(value) { this._color = value; }
   set intensity(value) { this._intensity = value; }
 
+  // Debug
   draw(mvp) {
     console.assert(this._debug);
 

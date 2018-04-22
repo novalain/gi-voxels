@@ -1,5 +1,3 @@
-import { timingSafeEqual } from 'crypto';
-
 const dat = require('dat.gui').default;
 
 class Gui {

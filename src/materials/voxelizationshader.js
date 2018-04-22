@@ -90,22 +90,25 @@ class VoxelizationShader {
             vec3 L = normalize(directional_world);
             vec3 N = normalize(normal_world);
 
-            //float visibility = texture(shadowMap, vec3(position_depth.xy, position_depth.z / position_depth.w), 0.0005);
-
+            // why you not work
+            //float visibility = texture(shadowMap, vec3(position_depth.xy, position_depth.z / position_depth.w), 0.005);
             float visibility = 1.0;
-            if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.0005){
-                visibility = 0.2;
+            if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005){
+                //visibility =  texture( shadowMap, position_depth.xy ).r;
+                visibility =  0.2;
             }
 
             float cosTheta = visibility *  max(dot(N, L), 0.0);
 
             if (hasDiffuseMap) {
+                float alpha = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)).a;
                 layer0 = cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
+                layer0.a = alpha;
             } else {
                 layer0 = cosTheta * vec4(1.0);
             }
 
-            layer0.a = 1.0;
+            //layer0.a = 1.0;
         }
     `;
 

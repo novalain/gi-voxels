@@ -9,13 +9,11 @@ class DirectionalLight extends Object {
   constructor(props) {
     super();
 
-    this._debug = props.debug;
     this._color = props && props.color || [1.0, 1.0, 1.0, 1.0];
     this._intensity = props && props.intensity || 0.5;
 
     // TODO: vec3
     this.direction = props && vec4.fromValues(props.direction[0], props.direction[1], props.direction[2], props.direction[3]) || [0.0, -20.0, 0.0, 1.0];
-    this.directionViewSpace = vec3.create();
 
     if (props.debug) {
       const sphere = new Sphere(3.2, 6);
@@ -39,14 +37,13 @@ class DirectionalLight extends Object {
     }
   }
 
-  //get positionViewSpace() { return this._positionViewSpace; }
   get color() { return this._color; }
   get intensity() { return this._intensity; }
 
-  //set positionViewSpace(psv) { this._positionViewSpace = psv; }
   set color(value) { this._color = value; }
   set intensity(value) { this._intensity = value; }
 
+  // Debug
   draw(mvp) {
     console.assert(this._debug);
 

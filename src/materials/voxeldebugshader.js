@@ -47,8 +47,8 @@ class VoxelDebugShader {
                 vec3 direction = texture(Texture, textureCoordinateFrag).xyz - origin;
                 int numberOfSteps = int( length(direction) / stepLength);
                 direction = normalize(direction);
-               
-                // Trace.
+                
+                // trace
                 color = vec4(0.0f);
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + stepLength * float(i) * direction;
@@ -65,30 +65,11 @@ class VoxelDebugShader {
                     }
                     color += currentSample;
                 } 
-                color.rgb = pow(color.rgb, vec3(1.0 / 3.2));
+                //color.rgb = pow(color.rgb, vec3(1.0 / 3.2));
             }
     `;
-
-
         const gl = glContext();
-
-        // Create program
         this.program = createAndCompileProgram(gl, vsSource, fsSource);
-        // Keep uniform and attribute locations
-        // this.programInfo = {
-        //   uniformLocations: {
-        //     numLights: gl.getUniformLocation(this.program, 'numLights'),
-        //     numDirectionalLights: gl.getUniformLocation(this.program, 'numDirectionalLights')
-        // },
-        // uniformBlockLocations: {
-        //     material: gl.getUniformBlockIndex(this.program, 'materialBuffer'),
-        //     model: gl.getUniformBlockIndex(this.program, 'modelMatrices'),
-        //     scene: gl.getUniformBlockIndex(this.program, 'sceneMatrices'),
-        //     pointlights: gl.getUniformBlockIndex(this.program, 'pointLightsBuffer'),
-        //     directionallights: gl.getUniformBlockIndex(this.program, 'directionalLightsBuffer'),
-        //     gui: gl.getUniformBlockIndex(this.program, 'guiDataBuffer')
-        // }
-        // };
     }
 
     // Use this program (will always be only this program)
