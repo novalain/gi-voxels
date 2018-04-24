@@ -42,6 +42,7 @@ class Renderer {
     this.shadowMapResolution = 4096;
     this.sceneScale = 3000;
 
+    this.standardShader = new StandardShader();
     this.shadowShader = new ShadowShader();
     this.screenSpaceImageShader = new ScreenSpaceImageShader();
     this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/this.sceneScale, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
@@ -181,7 +182,7 @@ class Renderer {
       scene.gui.occlusionMultiplier,
       scene.gui.voxelConeStepSize,
       scene.gui.displayBump,
-      scene.gui.displaySpecular
+      scene.gui.displayOcclusion
     ]);
 
     const depthMVP = this.shadowCam.MVP;
@@ -213,45 +214,34 @@ class Renderer {
     if (scene.gui.showVoxels) {
       // Render debug scene
       this.voxelConeTracer.renderVoxelDebug(scene, camera, this.sceneUBO);
-    } else {
+    } else if (scene.gui.useVoxelGI) {
       //this._renderScene(scene, camera);
       this.voxelConeTracer.render(scene, camera, this.depthTexture, this.guiUBO, this.sceneUBO, this.materialUBO, this.modelMatricesUBO);
+    } else {
+      this._renderScene(scene, camera);
     }
   }
 
-  // _renderScene(scene, camera) {
-  //   // TODO:
-  //   //1. Front to back for opaque
-  //   //2. Batch together materials
-  //   //3. Back to front for transparent
-  //   // All objects rendered with the same shader
-  //   this.coneTracerShader.activate();
+  _renderScene(scene, camera) {
+    this.standardShader.activate();
 
-  //   const gl = glContext();
-  //   const program = this.coneTracerShader.program;
+    const gl = glContext();
+    const program = this.standardShader.program;
 
-  //   // Upload shadow map
-  //   gl.activeTexture(gl.TEXTURE0 + 4);
-  //   gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
-  //   gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
+    // Upload shadow map
+    gl.activeTexture(gl.TEXTURE0 + 4);
+    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+    gl.uniform1i(gl.getUniformLocation(program, 'shadowMap'), 4);
 
-  //   // Upload voxel map
-  //   gl.activeTexture(gl.TEXTURE0 + 5);
-  //   gl.bindTexture(gl.TEXTURE_3D, this.voxelConeTracer.voxelTexture);
-  //   gl.uniform1i(gl.getUniformLocation(program, 'voxelTexture'), 5);
+    // Set the uniform block binding for the active program
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
+    gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
 
-  //   // Set the uniform block binding for the active program
-  //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), this.guiUBO.location);
-  //   gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), this.sceneUBO.location);
-
-  //   //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'pointLightsBuffer'), this.pointLightUBO.location);
-  //   //gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'directionalLightsBuffer'), this.directionalLightUBO.location);
-
-  //   // Render scene normal
-  //   scene.objects.forEach(object => {
-  //     this._renderObject(object, scene, camera, program);
-  //   });
-  // }
+    // Render scene normal
+    scene.objects.forEach(object => {
+      this._renderObject(object, scene, camera, program);
+    });
+  }
 
   _renderToShadowMap(scene, camera) {
     const gl = glContext();

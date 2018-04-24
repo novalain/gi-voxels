@@ -7,12 +7,16 @@ class Gui {
     //this.test = {displayBump: true};
     this.displayBump = false;
     this.displaySpecular = false;
+    this.displayOcclusion = false;
+
     this.bumpIntensity = 1.0;
     this.fov = 90;
     this.displayShadowMapTextureQuad = false;
 
     // Voxel related
-    this._voxelFolder = this._gui.addFolder("Voxel GI");
+    this.useVoxelGI = false;
+
+    this._voxelFolder = this._gui.addFolder("Voxel GI Settings");
     this._voxelDebugFolder = this._voxelFolder.addFolder("Debug");
 
     // Debug
@@ -31,7 +35,9 @@ class Gui {
     this._voxelFolder.add(this, 'specularLightningMultiplier', 0.0, 10.0).name("Specular light");
     this._voxelFolder.add(this, 'occlusionMultiplier', 0.0, 5.0).name("Occlusion");
     this._voxelFolder.add(this, 'voxelConeStepSize', 0.1, 2.0).name("Voxel Step Size");
+    this._voxelFolder.add(this, 'displayOcclusion').name("Display Occlusion");
 
+    this._useVoxelGI = this._gui.add(this, 'useVoxelGI').name("Voxel GI");
     this._specularMap = this._gui.add(this, 'displaySpecular').name("Display Specular MAp");
     this._bumpMap = this._gui.add(this, 'displayBump').name("Display Normal Map");
     this._bumpIntensity = this._gui.add(this, 'bumpIntensity', 0.0, 2.0).name("Bump Intensity");

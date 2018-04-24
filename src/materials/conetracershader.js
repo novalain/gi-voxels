@@ -132,6 +132,8 @@ class ConeTracerShader {
                 bool displayOcclusion;
             };
 
+            vec3 scaleAndBias(vec3 p) { return 0.5 * p + vec3(0.5); }
+
             vec3 calculateBumpNormal() {
                 vec3 bn = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y)).rgb * 2.0 - 1.0;
                 bn.x *= bumpIntensity;
@@ -140,42 +142,121 @@ class ConeTracerShader {
             }
 
             vec4 sampleVoxels(vec3 worldPosition, float mip) {
-                vec3 voxelTextureUV = worldPosition / sceneScale;
-                voxelTextureUV = voxelTextureUV * 0.5 + 0.5;
-                return textureLod(voxelTexture, voxelTextureUV, mip);
+                return textureLod(voxelTexture, scaleAndBias(worldPosition / 3000.0), mip);
             }
 
             vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
                 vec3 color = vec3(0.0);
                 float alpha = 0.0;
+                                
                 occlusion = 0.0;
+                
 
                 // We need to offset the cone start position to avoid sampling its own voxel (self-occlusion):
 	            // Unfortunately, it will result in disconnection between nearby surfaces :(
                 float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
                 vec3 startPos = position_world + normal_world * voxelWorldSize;                             
 
-                float maxDistance = 50.0 * voxelWorldSize;
+                float maxDistance = 100.0 * voxelWorldSize;
 
-                while(dist < maxDistance && alpha < 0.95) {
+                // while (dist < maxDistance) {
+                //     float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
+                //     float mip = 0.0;//log2(diameter / voxelWorldSize);
+
+                //     vec3 currentPoint = startPos + dist * direction;
+                //     vec4 currentSample = textureLod(voxelTexture, scaleAndBias(currentPoint / 3000.0), mip);
+                    
+                //     if (currentSample.a > 0.0) {
+                //         currentSample.rgb /= currentSample.a;
+                //         // Alpha compositing
+                //         color.rgb = color.rgb + (1.0 - color.a) * currentSample.a * currentSample.rgb;
+                //         color.a   = color.a   + (1.0 - color.a) * currentSample.a;
+                //     }
+
+                //     if (color.a > 0.95) {
+                //         break;
+                //     }
+
+                //     // if (dist > maxDistance) {
+                //     //     break;
+                //     // }
+
+                //     dist += diameter * voxelConeStepSize;
+                //     color += currentSample;
+                    
+                    
+                //     occlusion = occlusion + 0.001;
+                // }
+
+                // return color;
+
+                // for (int i = 0; i < 100; ++i) {
+
+                //     if (alpha > 0.95) {
+                //         break;
+                //     }
+                //     occlusion = occlusion + 0.001;
+
+                //     // if (dist > maxDistance) {
+                //     //     break;
+                //     // }
+
+                //     // smallest sample diameter possible is the voxel size
+                //     float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
+                //     float mip = log2(diameter / voxelWorldSize);
+                //     vec4 voxelColor = sampleVoxels(startPos + dist * direction, mip);
+
+                //     color.rgb = color.rgb + (1.0 - color.a) * voxelColor.a * voxelColor.rgb;
+
+                //     // // front-to-back compositing
+                //     //float a = (1.0 - alpha);
+                //     //color = color + alpha * voxelColor.rgb;
+                //     // alpha = alpha + a * voxelColor.a;
+                    
+                //     // color = color + voxelColor.rgb;
+                //     // //occlusion += a * voxelColor.a;
+                    
+                //     // dist = dist + voxelConeStepSize * max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
+                //    // dist += diameter * voxelConeStepSize;
+                // }
+
+                int count = 0;
+
+                while (dist < maxDistance) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
                     float mip = log2(diameter / voxelWorldSize);
-                    vec4 voxelColor = sampleVoxels(startPos + dist * direction, mip);
+
+                    vec3 worldPosition = startPos + dist * direction;
+                    vec4 voxelColor = textureLod(voxelTexture, scaleAndBias(worldPosition / sceneScale), mip);
 
                     // front-to-back compositing
-                    float a = (1.0 - alpha);
-                    color += a * voxelColor.rgb;
-                    alpha += a * voxelColor.a;
 
-                    color += voxelColor.rgb;
+                    //if (voxelColor.a > 0.0) {
+                        float a = (1.0 - alpha);
+                        color = color + a * voxelColor.rgb;
+                        alpha = alpha + a * voxelColor.a;
+                        
+                        color = color + voxelColor.rgb;
+                        occlusion = occlusion + a * voxelColor.a;
 
-                    occlusion += a * voxelColor.a;
-                    
-                    dist += diameter * voxelConeStepSize;
+                        //occlusion = occlusion + (a * voxelColor.a) / (1.0 + 0.03 * diameter);
+                        //occlusion += 0.1;
+                  //  }
+
+                    dist = dist + diameter * voxelConeStepSize;
+
+                    if (alpha > 0.95) {
+                        break;
+                    }
+
+                    // count = count + 1;
+                    // if (count < 2) {
+                    //     break;
+                    // }
                 }
 
-                return vec4(color, alpha);
+                return vec4(color, 1.0);
             }
 
             vec3 calculateIndirectLightning(out float occlusion_out) {
@@ -187,8 +268,7 @@ class ConeTracerShader {
                     color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
                     occlusion_out += coneWeights[i] * occlusion;
                 }
-
-                occlusion_out = 1.0 - occlusion_out;
+                occlusion_out = max(1.0 - occlusion_out, 0.0);
                 return color.xyz;
             }
 
@@ -217,7 +297,7 @@ class ConeTracerShader {
                     // Indirect diffuse light
                     vec3 indirectDiffuseLight = indirectMultiplier * 2.0 * calculateIndirectLightning(occlusion);
                     occlusion = min(1.0, occlusionMultiplier * occlusion); // Make occlusion brighter
-                    occlusion = occlusionMultiplier * occlusion;
+
                     diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
                 }
 

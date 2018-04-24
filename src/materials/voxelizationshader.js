@@ -106,9 +106,8 @@ class VoxelizationShader {
                 layer0.a = alpha;
             } else {
                 layer0 = cosTheta * vec4(1.0);
+                layer0.a = 1.0;
             }
-
-            //layer0.a = 1.0;
         }
     `;
 
@@ -116,21 +115,6 @@ class VoxelizationShader {
 
     // Create program
     this.program = createAndCompileProgram(gl, vsSource, fsSource);
-    // Keep uniform and attribute locations
-    // this.programInfo = {
-    //   uniformLocations: {
-    //     numLights: gl.getUniformLocation(this.program, 'numLights'),
-    //     numDirectionalLights: gl.getUniformLocation(this.program, 'numDirectionalLights')
-    // },
-    // uniformBlockLocations: {
-    //     material: gl.getUniformBlockIndex(this.program, 'materialBuffer'),
-    //     model: gl.getUniformBlockIndex(this.program, 'modelMatrices'),
-    //     scene: gl.getUniformBlockIndex(this.program, 'sceneMatrices'),
-    //     pointlights: gl.getUniformBlockIndex(this.program, 'pointLightsBuffer'),
-    //     directionallights: gl.getUniformBlockIndex(this.program, 'directionalLightsBuffer'),
-    //     gui: gl.getUniformBlockIndex(this.program, 'guiDataBuffer')
-    // }
-    // };
   }
 
   // Use this program (will always be only this program)

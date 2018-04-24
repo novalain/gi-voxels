@@ -49,7 +49,7 @@ class VoxelDebugShader {
                 direction = normalize(direction);
                 
                 // trace
-                color = vec4(0.0f);
+                color = vec4(0.0);
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + stepLength * float(i) * direction;
                     vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint / sceneScale), mipmapLevel);
