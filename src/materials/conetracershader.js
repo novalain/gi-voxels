@@ -128,6 +128,7 @@ class ConeTracerShader {
                 float specularMultiplier;
                 float occlusionMultiplier;
                 float voxelConeStepSize;
+                float voxelConeMaxDist;
                 bool displayNormalMap;
                 bool displayOcclusion;
             };
@@ -155,7 +156,7 @@ class ConeTracerShader {
                 float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
                 vec3 startPos = position_world + normal_world * voxelWorldSize;                             
 
-                float maxDistance = 50.0 * voxelWorldSize;
+                float maxDistance = voxelConeMaxDist * voxelWorldSize;
                 int count = 0;
 
                 while (dist < maxDistance) {

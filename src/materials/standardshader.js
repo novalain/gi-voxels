@@ -128,6 +128,7 @@ class StandardShader {
                 float specularMultiplier;
                 float occlusionMultiplier;
                 float voxelConeStepSize;
+                float voxelConeMaxDist;
                 bool displayNormalMap;
                 bool displayOcclusion;
             };
@@ -148,12 +149,10 @@ class StandardShader {
                 vec4 materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                 float alpha = materialColor.a;
 
-
                 float visibility = 1.0;
                 if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005) {
                     visibility = 0.0;
                 }
-
 
                 float cosTheta = max(0.0, dot(N, L));
                 vec3 directDiffuseLight = vec3(visibility * cosTheta);

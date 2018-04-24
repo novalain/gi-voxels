@@ -35,7 +35,7 @@ class Renderer {
         ...mat4.create(), // model
         ...mat4.create(), // normal 
     ]);
-    this.guiUBO = new UniformBufferObject(new Float32Array(500));
+    this.guiUBO = new UniformBufferObject(new Float32Array(600));
     this.sceneUBO = new UniformBufferObject(new Float32Array(500));
     this.pointLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
     this.directionalLightUBO = new UniformBufferObject(new Float32Array(Renderer.MAX_LIGHTS * Renderer.LIGHT_DATA_CHUNK_SIZE));
@@ -45,7 +45,7 @@ class Renderer {
     this.standardShader = new StandardShader();
     this.shadowShader = new ShadowShader();
     this.screenSpaceImageShader = new ScreenSpaceImageShader();
-    this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/this.sceneScale, /*cubeSize*/2000, /*resolution*/256, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
+    this.voxelConeTracer = new VoxelConeTracer(/*sceneScale=*/this.sceneScale, /*cubeSize*/2000, /*resolution*/128, this.materialUBO, this.pointLightUBO, this.modelMatricesUBO, this.sceneUBO);
 
     this.sceneUBO.bind();
     this.pointLightUBO.bind();
@@ -53,11 +53,9 @@ class Renderer {
     this.modelMatricesUBO.bind();
     this.materialUBO.bind();
     this.guiUBO.bind();
-
-    this._initShadowMap();
   }
 
-  _initShadowMap() {
+  _initShadowMap(directionalLightPos) {
     const gl = glContext();
     
     // Set up depth fbo
@@ -91,7 +89,7 @@ class Renderer {
       this.sceneScale); 
 
     // Get point light position... direction i mean
-    this.shadowCam.position = vec3.fromValues(-0.3, 0.9, -0.25);
+    this.shadowCam.position = vec3.fromValues(directionalLightPos[0], directionalLightPos[1], directionalLightPos[2]);
     this.shadowCam.lookAt(vec3.fromValues(0.0, 0.0, 0.0));
     this.shadowCam.MVP = mat4.create();
     mat4.multiply(this.shadowCam.MVP, this.shadowCam.projectionMatrix, this.shadowCam.viewMatrix);
@@ -146,7 +144,7 @@ class Renderer {
     gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
     gl.uniform1i(gl.getUniformLocation(this.screenSpaceImageShader.program, 'Texture'), 0);
 
-    gl.viewport(0, 0, 300, 300);
+    gl.viewport(0, 0, 300 * window.devicePixelRatio, 300 * window.devicePixelRatio);
     this.quad.draw();
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
@@ -181,9 +179,16 @@ class Renderer {
       scene.gui.specularLightningMultiplier,
       scene.gui.occlusionMultiplier,
       scene.gui.voxelConeStepSize,
+      scene.gui.voxelConeMaxDist,
       scene.gui.displayBump,
       scene.gui.displayOcclusion
     ]);
+
+    if (this.renderToShadowMap) {
+      this._initShadowMap(scene.directionalLights[0].direction);
+      this._renderToShadowMap(scene, camera);
+      this.renderToShadowMap = false;
+    }
 
     const depthMVP = this.shadowCam.MVP;
     // TODO: Why doens't integers work? Float32Array??
@@ -196,10 +201,7 @@ class Renderer {
 
     this._uploadLightning(scene, camera);
 
-    if (this.renderToShadowMap) {
-      this._renderToShadowMap(scene, camera);
-      this.renderToShadowMap = false;
-    }
+   
 
     if (scene.gui.displayShadowMapTextureQuad) {
       this._renderShadowMapToScreen();
