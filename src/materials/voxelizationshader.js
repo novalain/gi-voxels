@@ -94,8 +94,8 @@ class VoxelizationShader {
             //float visibility = texture(shadowMap, vec3(position_depth.xy, position_depth.z / position_depth.w), 0.005);
             float visibility = 1.0;
             if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005){
-                //visibility =  texture( shadowMap, position_depth.xy ).r;
-                visibility =  0.2;
+                //visibility = texture( shadowMap, position_depth.xy ).r;
+                visibility = 0.2;
             }
 
             float cosTheta = visibility *  max(dot(N, L), 0.0);
