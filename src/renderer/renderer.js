@@ -215,7 +215,6 @@ class Renderer {
       // Render debug scene
       this.voxelConeTracer.renderVoxelDebug(scene, camera, this.sceneUBO);
     } else if (scene.gui.useVoxelGI) {
-      //this._renderScene(scene, camera);
       this.voxelConeTracer.render(scene, camera, this.depthTexture, this.guiUBO, this.sceneUBO, this.materialUBO, this.modelMatricesUBO);
     } else {
       this._renderScene(scene, camera);
@@ -227,6 +226,8 @@ class Renderer {
 
     const gl = glContext();
     const program = this.standardShader.program;
+
+    gl.uniform3fv(gl.getUniformLocation(program, 'camera_world'), camera.position);
 
     // Upload shadow map
     gl.activeTexture(gl.TEXTURE0 + 4);
