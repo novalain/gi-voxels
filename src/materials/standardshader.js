@@ -141,6 +141,11 @@ class StandardShader {
             }
 
             void main() {
+                if (hasDissolveMap) {
+                    if (texture(dissolveMap, vec2(vUv.x, 1.0 - vUv.y)).r  < 0.1) {
+                        discard;
+                    }
+                }
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
                 vec3 L = normalize(directional_world);
