@@ -159,7 +159,7 @@ class ConeTracerShader {
                 float maxDistance = voxelConeMaxDist * voxelWorldSize;
                 int count = 0;
 
-                while (dist < maxDistance) {
+                while (dist < maxDistance && alpha < 0.95) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
                     float mip = log2(diameter / voxelWorldSize);
@@ -167,19 +167,19 @@ class ConeTracerShader {
                     vec3 worldPosition = startPos + dist * direction;
                     vec4 voxelColor = textureLod(voxelTexture, scaleAndBias(worldPosition / sceneScale), mip);
 
-                    // front-to-back compositing
-                    float a = (1.0 - alpha);
-                    color = color + a * voxelColor.rgb;
-                    alpha = alpha + a * voxelColor.a;
+                    if (voxelColor.a > 0.0) {
+                        // front-to-back compositing
+                        float a = (1.0 - alpha);
+                        color = color + a * voxelColor.rgb;
+                        alpha = alpha + a * voxelColor.a;
+                        occlusion = occlusion + a * voxelColor.a;
+                        //occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
+                        
+                    }
                     
-                    color = color + voxelColor.rgb;
-                    occlusion = occlusion + a * voxelColor.a;
+                    
 
                     dist = dist + diameter * voxelConeStepSize;
-
-                    if (alpha > 0.95) {
-                        break;
-                    }
                 }
 
                 return vec4(color, alpha);
@@ -194,7 +194,7 @@ class ConeTracerShader {
                     color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
                     occlusion_out += coneWeights[i] * occlusion;
                 }
-                occlusion_out = max(1.0 - occlusion_out, 0.0);
+                occlusion_out = 1.0 - occlusion_out;
                 return color.xyz;
             }
 

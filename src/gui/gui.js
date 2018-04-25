@@ -24,8 +24,8 @@ class Gui {
     this.voxelMipmap = 0.0;
     this.voxelDebugStepSize = 5.0;
 
-    this.voxelConeStepSize = 25.0;
-    this.voxelConeMaxDist = 100.0;
+    this.voxelConeStepSize = 0.8;
+    this.voxelConeMaxDist = 25.0;
     this.indirectLightningMultiplier = 4.0;
     this.directLightningMultiplier = 1.5;
     this.specularLightningMultiplier = 1.0;
@@ -35,8 +35,8 @@ class Gui {
     this._voxelFolder.add(this, 'directLightningMultiplier', 0.0, 10.0).name("Direct light");
     this._voxelFolder.add(this, 'specularLightningMultiplier', 0.0, 10.0).name("Specular light");
     this._voxelFolder.add(this, 'occlusionMultiplier', 0.0, 5.0).name("Occlusion");
-    this._voxelFolder.add(this, 'voxelConeStepSize', 0.2, 100.0).name("Step Size");
-    this._voxelFolder.add(this, 'voxelConeMaxDist', 1.0, 500.0).name("Max Trace Dist");
+    this._voxelFolder.add(this, 'voxelConeStepSize', 0.1, 2.0).name("Step Size");
+    this._voxelFolder.add(this, 'voxelConeMaxDist', 1.0, 50.0).name("Trace Dist");
     this._voxelFolder.add(this, 'displayOcclusion').name("Show AO");
 
     this._useVoxelGI = this._gui.add(this, 'useVoxelGI').name("Voxel GI");
@@ -45,9 +45,9 @@ class Gui {
     this._bumpIntensity = this._gui.add(this, 'bumpIntensity', 0.0, 2.0).name("Bump Intensity");
     this._fov = this._gui.add(this, 'fov', 0, 100);
     this._showVoxels = this._voxelDebugFolder.add(this, 'showVoxels').name("Render Voxels");
-    this._voxelMipmap = this._voxelDebugFolder.add(this, 'voxelMipmap', 0.0, 5.0).name("Voxel Mipmap");
-    this._voxelDebugStepSize = this._voxelDebugFolder.add(this, 'voxelDebugStepSize', 1.0, 20.0).name("Voxel Debug Step Size");
-    this._displayShadowMapTextureQuad = this._gui.add(this, 'displayShadowMapTextureQuad').name("Display Shadow Map");
+    this._voxelMipmap = this._voxelDebugFolder.add(this, 'voxelMipmap', 0.0, 5.0).name("Mip");
+    this._voxelDebugStepSize = this._voxelDebugFolder.add(this, 'voxelDebugStepSize', 1.0, 20.0).name("Step Size");
+    this._displayShadowMapTextureQuad = this._gui.add(this, 'displayShadowMapTextureQuad').name("Shadow Map");
   }
 
   get lights() { return this._lightsFolder; }
