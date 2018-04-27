@@ -15,17 +15,17 @@ class ScreenSpaceImageShader {
             void main(){
                 gl_Position =  vec4(VertexPosition_model, 1);
                 vUv  = (VertexPosition_model.xy + vec2(1, 1))/2.0f;
-            }            
+            }
         `;
 
-        const fsSource = `#version 300 es 
+        const fsSource = `#version 300 es
             precision highp float;
             in vec2 vUv;
 
             layout(location = 0) out vec4 outColor;
-            
+
             uniform sampler2D Texture;
-            
+
             void main(){
                 float res = texture(Texture, vUv).r;
                 outColor = vec4(res, res, res, 1.0);
@@ -35,7 +35,7 @@ class ScreenSpaceImageShader {
                 //outColor = vec4(normalize(res), 1.0);
                 //outColor = vec4(texture(Texture, vUv).rgb, 1.0);
             }
-            
+
     `;
         const gl = glContext();
         // Create program

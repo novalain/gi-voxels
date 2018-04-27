@@ -133,7 +133,7 @@ class VoxelConeTracer {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.voxelFb);
 
-    // TODO: Do we need depth test?
+    // TODO: Need depth test?
     // this.renderBuffer = gl.createRenderbuffer();
     // gl.bindRenderbuffer(gl.RENDERBUFFER, this.renderBuffer);
     // gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 64, 64);
@@ -164,8 +164,8 @@ class VoxelConeTracer {
     for (let i = 0; i < this.voxelTextureSize; i++ ) {
       const orthoCamera = new OrthographicCamera(
         -sceneScale,
-        sceneScale, 
-        -sceneScale, 
+        sceneScale,
+        -sceneScale,
         sceneScale,
         sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
         sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
@@ -179,7 +179,7 @@ class VoxelConeTracer {
       }
 
       const viewProjection = mat4.create();
-      mat4.multiply(viewProjection, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+      mat4.multiply(viewProjection, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);
       gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjection'), false, viewProjection);
 
       gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), sceneUBO.location);
@@ -195,8 +195,8 @@ class VoxelConeTracer {
     for (let i = 0; i < this.voxelTextureSize; i++ ) {
       const orthoCamera = new OrthographicCamera(
         -sceneScale,
-        sceneScale, 
-        -sceneScale, 
+        sceneScale,
+        -sceneScale,
         sceneScale,
         sceneScale - (i / this.voxelTextureSize) * sceneScale * 2, // near
         sceneScale - ((i + 1) / this.voxelTextureSize) * sceneScale * 2); // far
@@ -209,7 +209,7 @@ class VoxelConeTracer {
       }
 
       const viewProjection = mat4.create();
-      mat4.multiply(viewProjection, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+      mat4.multiply(viewProjection, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);
       gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjection'), false, viewProjection);
 
       // Set uniforms
@@ -241,7 +241,7 @@ class VoxelConeTracer {
       }
 
       const viewProjection = mat4.create();
-      mat4.multiply(viewProjection, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);  
+      mat4.multiply(viewProjection, orthoCamera.projectionMatrix, orthoCamera.viewMatrix);
       gl.uniformMatrix4fv(gl.getUniformLocation(program, 'viewProjection'), false, viewProjection);
 
       // Set uniforms
@@ -257,10 +257,10 @@ class VoxelConeTracer {
     let t1 = performance.now();
     console.log("Voxel rendering took " + (t1 - t0) + " milliseconds.")
 
-    const vSize = this.voxelTextureSize;    
+    const vSize = this.voxelTextureSize;
     let data = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * this.voxelTextureSize * 4);
     // X texture
-    for (let i = 0; i < this.voxelTextureSize; i++ ) { 
+    for (let i = 0; i < this.voxelTextureSize; i++ ) {
 
       let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.xTexture, 0, i);
@@ -295,16 +295,16 @@ class VoxelConeTracer {
 
         if (slice[j+0] > 0) {
           data[ (i * vSize + vSize * vSize * rowCount + vSize - it - 1) * 4 + 0] = slice[j+0];
-        } 
+        }
 
         if (slice [j + 1] > 0) {
           data[ (i * vSize + vSize * vSize * rowCount + vSize - it - 1) * 4 + 1] = slice[j+1];
-        } 
+        }
 
         if (slice [j + 2] > 0) {
           data[ (i * vSize + vSize * vSize * rowCount + vSize - it - 1) * 4 + 2] = slice[j+2];
         }
-  
+
         if (slice[j + 3 ] > 0) {
           data[ (i * vSize + vSize * vSize * rowCount + vSize - it - 1) * 4 + 3] = slice[j+3];
         }
@@ -314,7 +314,7 @@ class VoxelConeTracer {
     }
 
     // Add to Z texture
-    for (let i = 0; i < this.voxelTextureSize; i++ ) { 
+    for (let i = 0; i < this.voxelTextureSize; i++ ) {
       let slice = new Uint8Array(this.voxelTextureSize * this.voxelTextureSize * 4);
       gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.zTexture, 0, i);
       gl.readPixels(0, 0, this.voxelTextureSize, this.voxelTextureSize, gl.RGBA,  gl.UNSIGNED_BYTE, slice, 0);
@@ -380,7 +380,7 @@ class VoxelConeTracer {
     const materialData = object.materialData;
     // Different between objects
     materialUBO.update([
-      ...[...materialData.ambient, 0.0], // vec3 16  0 
+      ...[...materialData.ambient, 0.0], // vec3 16  0
       ...[...materialData.diffuse, 0.0], // vec3 16  16
       // ...[...materialData.emissive, 0.0], // vec3 16 32
       ...[...materialData.specular, 0.0], // vec3 16  48

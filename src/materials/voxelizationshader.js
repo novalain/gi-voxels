@@ -69,7 +69,6 @@ class VoxelizationShader {
         layout (std140) uniform materialBuffer {
             vec4 mambient; // 16 0 - base | aligned offset
             vec4 mdiffuse; // 16 16
-            //vec4 memissive;
             vec4 mspecular; // 16 32
             float specularExponent; // 4 48
             bool hasDiffuseMap; // 4 52
@@ -105,8 +104,7 @@ class VoxelizationShader {
                 layer0 = cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                 layer0.a = alpha;
             } else {
-                layer0 = cosTheta * vec4(1.0);
-                layer0.a = 1.0;
+                layer0 = vec4(cosTheta * mdiffuse.xyz, 1.0);
             }
         }
     `;

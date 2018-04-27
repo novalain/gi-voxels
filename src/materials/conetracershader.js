@@ -10,7 +10,7 @@ class ConeTracerShader {
             precision highp float;
 
             // Cred https://turanszkij.wordpress.com/2017/08/30/voxel-based-global-illumination/
-            // https://github.com/Cigg/Voxel-Cone-Tracing/blob/master/shaders/standard.frag
+            // and https://github.com/Cigg/Voxel-Cone-Tracing/blob/master/shaders/standard.frag
 
             layout(location = 0) in vec3 position;
             layout(location = 1) in vec3 normal;
@@ -111,7 +111,7 @@ class ConeTracerShader {
             float voxelWorldSize;
 
             const int NUM_CONES = 6;
-            vec3 coneDirections[6] = vec3[](                            
+            vec3 coneDirections[6] = vec3[](
                                         vec3(0, 1, 0),
                                         vec3(0, 0.5, 0.866025),
                                         vec3(0.823639, 0.5, 0.267617),
@@ -146,22 +146,19 @@ class ConeTracerShader {
                 return textureLod(voxelTexture, scaleAndBias(worldPosition / 3000.0), mip);
             }
 
-            vec4 coneTrace(vec3 direction, float tanHalfAngle, out float occlusion) {
+            vec4 coneTrace(vec3 direction, float aperture, out float occlusion) {
                 vec3 color = vec3(0.0);
-                float alpha = 0.0;                    
+                float alpha = 0.0;
                 occlusion = 0.0;
-            
-                // We need to offset the cone start position to avoid sampling its own voxel (self-occlusion):
-	            // Unfortunately, it will result in disconnection between nearby surfaces :(
-                float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
-                vec3 startPos = position_world + normal_world * voxelWorldSize;                             
 
+                float dist = voxelWorldSize; // Start one voxel away to avoid self occlusion
+                vec3 startPos = position_world + normal_world * voxelWorldSize;
                 float maxDistance = voxelConeMaxDist * voxelWorldSize;
                 int count = 0;
 
-                while (dist < maxDistance && alpha < 0.95) {
+                while (dist < maxDistance && alpha < 1.0) {
                     // smallest sample diameter possible is the voxel size
-                    float diameter = max(voxelWorldSize, 2.0 * tanHalfAngle * dist);
+                    float diameter = max(voxelWorldSize, 2.0 * aperture * dist);
                     float mip = log2(diameter / voxelWorldSize);
 
                     vec3 worldPosition = startPos + dist * direction;
@@ -173,28 +170,25 @@ class ConeTracerShader {
                         color = color + a * voxelColor.rgb;
                         alpha = alpha + a * voxelColor.a;
                         occlusion = occlusion + a * voxelColor.a;
-                        //occlusion += (a * voxelColor.a) / (1.0 + 0.03 * diameter);
-                        
                     }
-                    
-                    
 
+                    // step along the ray
                     dist = dist + diameter * voxelConeStepSize;
                 }
 
                 return vec4(color, alpha);
             }
 
-            vec3 calculateIndirectLightning(out float occlusion_out) {
+            vec3 coneTraceDirectLightning(out float outOcclusion) {
                 vec4 color = vec4(0);
                 for(int i = 0; i < NUM_CONES; i++) {
                     float occlusion = 0.0;
                     // 60 degree cones -> tan(30) = 0.577
                     // 90 degree cones -> tan(45) = 1.0
                     color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
-                    occlusion_out += coneWeights[i] * occlusion;
+                    outOcclusion += coneWeights[i] * occlusion;
                 }
-                occlusion_out = 1.0 - occlusion_out;
+                outOcclusion = 1.0 - outOcclusion;
                 return color.xyz;
             }
 
@@ -207,8 +201,13 @@ class ConeTracerShader {
                 }
 
                 voxelWorldSize = sceneScale / voxelResolution;
-                vec4 materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
-                float alpha = materialColor.a;
+
+                vec4 materialColor = vec4(1.0);
+                float alpha = 1.0;
+                if (hasDiffuseMap) {
+                    materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
+                    alpha = materialColor.a;
+                }
                 float occlusion = 0.0;
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
@@ -228,7 +227,7 @@ class ConeTracerShader {
                     vec3 directDiffuseLight = directMultiplier * vec3(visibility * cosTheta);
 
                     // Indirect diffuse light
-                    vec3 indirectDiffuseLight = indirectMultiplier * 2.0 * calculateIndirectLightning(occlusion);
+                    vec3 indirectDiffuseLight = indirectMultiplier * 2.0 * coneTraceDirectLightning(occlusion);
                     occlusion = min(1.0, occlusionMultiplier * occlusion); // Make occlusion brighter
 
                     diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
@@ -237,15 +236,17 @@ class ConeTracerShader {
                 // Calculate specular light
                 vec3 specularReflection;
                 {
-                    vec4 specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                    vec4 specularColor = vec4(1.0);
+                    if (hasSpecularMap) {
+                        specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                    }
                     specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
                     vec3 reflectDir = normalize(-E - 2.0 * dot(-E, N) * N);
 
-                    // Maybe fix so that the cone doesnt trace below the plane defined by the surface normal.
-                    // For example so that the floor doesnt reflect itself when looking at it with a small angle
+                    // Trace single cone
                     float specularOcclusion;
                     vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-                    specularReflection = 2.0 * specularOcclusion * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
+                    specularReflection = 2.0 * mspecular.xyz * specularOcclusion * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {

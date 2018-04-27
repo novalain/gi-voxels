@@ -12,7 +12,7 @@ import DirectionalLight from './lights/directionallight.js';
 import ObjectLoader from './utils/objectloader.js';
 import ResourceLoader from './utils/resourceloader.js';
 
-// TODO MOVE
+// TODO: helper function to access vector members. Move this somewhere
 Object.defineProperty(Float32Array.prototype, "x", {
   get: function() {
       return this[0];
@@ -47,7 +47,6 @@ export {
   Sphere,
   Mesh,
   Scene,
-  //MaterialLoader,
   Material,
   PerspectiveCamera,
   OrthographicCamera,

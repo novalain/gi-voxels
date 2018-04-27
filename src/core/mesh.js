@@ -47,7 +47,7 @@ class Mesh extends Entity {
   uploadTextures(program) {
     const gl = glContext();
     let location;
-  
+
     if (this._diffuseMap) {
       gl.activeTexture(gl.TEXTURE0 + 0);
       this._diffuseMap.bind();
@@ -97,7 +97,7 @@ class Mesh extends Entity {
         0
       );
     }
-    
+
     // Normal buffer
     {
       const normalBuffer = gl.createBuffer();
@@ -114,7 +114,7 @@ class Mesh extends Entity {
       );
     }
 
-    // UV's buffer  
+    // UV's buffer
     {
       const textureBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
@@ -148,7 +148,7 @@ class Mesh extends Entity {
           false,
           0,
           0
-        );  
+        );
       }
     }
 

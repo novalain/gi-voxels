@@ -138,7 +138,7 @@ const FlyControls = function (camera, domElement = undefined) {
     const rotMult = 1.0 * delta * this.rollSpeed;
 
     const viewMatrix = this.camera.viewMatrix;
-    
+
     const strafe = vec3.create();
     strafe[0] = viewMatrix[0];
     strafe[1] = viewMatrix[4];
@@ -178,14 +178,14 @@ const FlyControls = function (camera, domElement = undefined) {
     quat.identity(this.camera.quaternion);
     quat.rotateX(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[0]);
     quat.rotateZ(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[2]);
-    quat.rotateY(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[1]);    
+    quat.rotateY(this.camera.quaternion, this.camera.quaternion, this.camera.rotation[1]);
 
     const axisAngle = quat.getAxisAngle(this.camera.quaternionAxisAngle, this.camera.quaternion);
-    
+
     mat4.identity(this.camera.viewMatrix);
     const negatedVec = vec3.create();
     vec3.negate(negatedVec, this.camera.position);
-  
+
     //const translationMatrix = mat4.create();
     mat4.rotate(this.camera.viewMatrix, this.camera.viewMatrix, axisAngle, this.camera.quaternionAxisAngle);
     mat4.translate(this.camera.viewMatrix, this.camera.viewMatrix, negatedVec);

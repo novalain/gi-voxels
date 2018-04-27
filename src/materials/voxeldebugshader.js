@@ -9,7 +9,7 @@ class VoxelDebugShader {
         const vsSource = `#version 300 es
             precision highp float;
             layout(location = 0) in vec3 position;
-        
+
             out vec2 textureCoordinateFrag;
 
             vec2 scaleAndBias(vec2 p) { return 0.5 * p + vec2(0.5); }
@@ -19,12 +19,12 @@ class VoxelDebugShader {
             }
         `;
 
-        const fsSource = `#version 300 es     
-            precision highp float;      
-            precision mediump sampler3D;                  
+        const fsSource = `#version 300 es
+            precision highp float;
+            precision mediump sampler3D;
 
             #define STEP_LENGTH 5.0
-            
+
             const int MAX_POINT_LIGHTS = 8;
 
             uniform sampler2D Texture; // Unit cube back FBO.
@@ -35,20 +35,19 @@ class VoxelDebugShader {
             uniform float stepLength;
             uniform float sceneScale;
 
-            in vec2 textureCoordinateFrag; 
+            in vec2 textureCoordinateFrag;
             out vec4 color;
-                        
+
             // Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
             vec3 scaleAndBias(vec3 p) { return 0.5 * p + vec3(0.5); }
 
             void main() {
-                // Initialize ray.
+                // Initialize ray
                 vec3 origin = cameraPosition;
                 vec3 direction = texture(Texture, textureCoordinateFrag).xyz - origin;
                 int numberOfSteps = int( length(direction) / stepLength);
                 direction = normalize(direction);
-                
-                // trace
+
                 color = vec4(0.0);
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + stepLength * float(i) * direction;
@@ -56,7 +55,6 @@ class VoxelDebugShader {
 
                     if (currentSample.a > 0.0) {
                         currentSample.rgb /= currentSample.a;
-                        // Alpha compositing
                         color.rgb = color.rgb + (1.0 - color.a) * currentSample.a * currentSample.rgb;
                         color.a   = color.a   + (1.0 - color.a) * currentSample.a;
                     }
@@ -64,7 +62,7 @@ class VoxelDebugShader {
                         break;
                     }
                     color += currentSample;
-                } 
+                }
                 //color.rgb = pow(color.rgb, vec3(1.0 / 3.2));
             }
     `;

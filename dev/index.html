@@ -6,12 +6,6 @@
     <style>
       html, body {
         margin: 0;
-        /* background-image: url("img/prescreen.png");
-        background-repeat:no-repeat;
-
-        transition: all 10s linear;
-        filter: blur(5px);
-        background-size: 100% 100%; */
       }
 
       .background-image {
@@ -73,8 +67,8 @@
       document.body.appendChild(canvas);
 
       const objectsToLoad = [{
-        name : 'die',
-        obj: 'data/crysponza/sponza.obj',
+        name : 'sponzascene',
+        obj: 'data/breakfast_room/breakfastroom.obj',
         mtl: true,
         indicesPerMaterial:true,
         calcTangentsAndBitangents: true
@@ -83,18 +77,13 @@
 
       const texturesToLoad = {
         'placeholder': 'placeholder.jpg'
-      };  
-    
-      
-      //const resourceLoader = new siick.ResourceLoader();
-      //materialLoader.load(objectMaterialsToLoad);
-      //const loadImagesPromise = resourceLoader.loadImages(texturesToLoad);
-      
+      };
+
       const objLoader = new siick.ObjectLoader();
       const loadModelsAndMaterialsPromise = objLoader.loadModelsAndMaterials(objectsToLoad);
 
       Promise.all([loadModelsAndMaterialsPromise]).then(([objMatData]) => {
-        console.log("object and mat data", objMatData);       
+        console.log("object and mat data", objMatData);
 
         document.getElementById("loading").innerHTML = "Voxelizing Scene ...";
         setTimeout(() => {
@@ -110,7 +99,7 @@
 
           // 1. Create orthographic camera, align viewport with scene
           window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);        
+            renderer.setSize(window.innerWidth, window.innerHeight);
           });
 
           const pointLight = new siick.PointLight(
@@ -118,7 +107,8 @@
           );
 
           const directionalLight = new siick.DirectionalLight(
-            { direction: [-0.4, 0.9, -0.2, 1.0], intensity: 1.0, debug: true }
+              { direction: [-0.4, 0.9, -0.2, 1.0], intensity: 1.0, debug: true }
+            //{ direction: [-0.4, 0.9, -0.2, 1.0], intensity: 1.0, debug: true }
           );
 
           // Set up buffers for mesh
@@ -136,11 +126,11 @@
           // pointLight.position[0] = -753;
           // pointLight.position[1] = 751;
           // pointLight.position[2] = 324;
-        
+
           // scene.add(dieMesh  );
           //scene.add(pointLight);
           scene.add(directionalLight);
-    
+
           const fl = new siick.FlyControls(camera);
           const fpsMeter = document.getElementById("fps_meter");
 
@@ -154,14 +144,12 @@
             fpsMeter.innerHTML = fps;
 
             if (!renderer.voxelize) {
-
               setTimeout(() => {
                 document.getElementById('loadingContainer').classList.add("hide");
                 document.getElementById('blurbackground').classList.add("noblur");
                 setTimeout(() => {
                 document.getElementById('blurbackground').classList.add("hide");
                 }, 1500);
-          
                 document.getElementById('fpsContainer').classList.remove("hide");
               }, 50);
             }

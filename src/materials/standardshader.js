@@ -111,7 +111,7 @@ class StandardShader {
             float voxelWorldSize;
 
             const int NUM_CONES = 6;
-            vec3 coneDirections[6] = vec3[](                            
+            vec3 coneDirections[6] = vec3[](
                                         vec3(0, 1, 0),
                                         vec3(0, 0.5, 0.866025),
                                         vec3(0.823639, 0.5, 0.267617),
@@ -148,25 +148,32 @@ class StandardShader {
                 }
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
+
+                vec3 L = normalize()
+
                 vec3 L = normalize(directional_world);
                 vec3 E = normalize(camera_world);
 
-                vec4 materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
-                float alpha = materialColor.a;
+                float alpha = 1.0;
 
                 float visibility = 1.0;
                 if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005) {
-                    visibility = 0.0;
+                    visibility = 1.0;
                 }
 
                 float cosTheta = max(0.0, dot(N, L));
-                vec3 directDiffuseLight = vec3(visibility * cosTheta);
-                vec3 diffuseReflection = 2.0 * mdiffuse.xyz * directDiffuseLight * materialColor.rgb;
-                
+                vec3 directDiffuseLight = 2.0 * mdiffuse.xyz * vec3(visibility * cosTheta);
+
+                if (hasDiffuseMap) {
+                    vec4 materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
+                    alpha = materialColor.a;
+                    directDiffuseLight = directDiffuseLight * materialColor.rgb;
+                }
+
                 if (displayNormalMap && hasNormalMap) {
                     outColor = texture(bumpMap, vec2(vUv.x, 1.0 - vUv.y));
                 } else {
-                    outColor = vec4(diffuseReflection, alpha);
+                    outColor = vec4(directDiffuseLight, alpha);
                 }
             }
     `;

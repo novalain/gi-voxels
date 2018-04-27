@@ -1,5 +1,7 @@
 import { vec3 } from 'gl-matrix';
 
+// Cred https://github.com/andrevenancio/engine
+
 export function flatten(arr) {
   let output = [];
   for (let i = 0; i < arr.length; ++i) {

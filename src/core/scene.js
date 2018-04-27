@@ -44,7 +44,7 @@ class Scene {
     this.objects.push(object);
   }
 
-  traverse(camera) {    
+  traverse(camera) {
     const gui = this._gui;
     camera.setFov(this._gui.fov);
     // Update model and normal matrix

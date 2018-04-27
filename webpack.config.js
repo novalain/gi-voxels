@@ -32,20 +32,6 @@ const config = {
         umdNamedDefine: true,
         publicPath: '/dist/',
     },
-    // module: {
-    //     rules: [
-    //         {
-    //             test: /(\.jsx|\.js)$/,
-    //             loader: 'babel-loader',
-    //             exclude: /(node_modules|bower_components)/,
-    //         },
-    //         {
-    //             test: /(\.jsx|\.js)$/,
-    //             loader: 'eslint-loader',
-    //             exclude: /node_modules/,
-    //         },
-    //     ],
-    // },
     resolve: {
         // modules: [__dirname + './src'],
         extensions: ['.js'],

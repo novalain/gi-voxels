@@ -27,13 +27,13 @@ class Renderer {
 
     this.quad = new Quad();
     this.renderToShadowMap = true;
-    this.voxelize = true; 
-    this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));    
+    this.voxelize = true;
+    this.materialUBO = new UniformBufferObject(new Float32Array(Renderer.MATERIAL_DATA_CHUNK_SIZE));
     // True for all programs, keep in mesh ??
     // With this declaration - does not work to put in float in here
     this.modelMatricesUBO = new UniformBufferObject([
         ...mat4.create(), // model
-        ...mat4.create(), // normal 
+        ...mat4.create(), // normal
     ]);
     this.guiUBO = new UniformBufferObject(new Float32Array(600));
     this.sceneUBO = new UniformBufferObject(new Float32Array(500));
@@ -57,7 +57,7 @@ class Renderer {
 
   _initShadowMap(directionalLightPos) {
     const gl = glContext();
-    
+
     // Set up depth fbo
     this.depthFBO = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFBO);
@@ -71,7 +71,7 @@ class Renderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    
+
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.depthTexture, 0);
     gl.drawBuffers([gl.NONE]);
 
@@ -86,7 +86,7 @@ class Renderer {
       -this.sceneScale,
       this.sceneScale,
       -this.sceneScale,
-      this.sceneScale); 
+      this.sceneScale);
 
     // Get point light position... direction i mean
     this.shadowCam.position = vec3.fromValues(directionalLightPos[0], directionalLightPos[1], directionalLightPos[2]);
@@ -103,11 +103,11 @@ class Renderer {
       ...object.modelMatrix,
       ...object.normalMatrix
     ]);
-  
+
     const materialData = object.materialData;
     // Different between objects
     this.materialUBO.update([
-      ...[...materialData.ambient, 0.0], // vec3 16  0 
+      ...[...materialData.ambient, 0.0], // vec3 16  0
       ...[...materialData.diffuse, 0.0], // vec3 16  16
       // ...[...materialData.emissive, 0.0], // vec3 16 32
       ...[...materialData.specular, 0.0], // vec3 16  48
@@ -201,8 +201,6 @@ class Renderer {
 
     this._uploadLightning(scene, camera);
 
-   
-
     if (scene.gui.displayShadowMapTextureQuad) {
       this._renderShadowMapToScreen();
     }
@@ -294,12 +292,12 @@ class Renderer {
 
     gl.cullFace(gl.BACK);
     gl.enable(gl.CULL_FACE);
-    
+
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // Clear canvas
-    
+
     this._internalRender(scene, camera);
   }
 }
