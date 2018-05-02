@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const Uglify = require('uglifyjs-webpack-plugin');
 const env = require('yargs').argv.env;
 
-let libraryName = 'siick';
+let libraryName = 'gi';
 let outputFile;
 
 const pkg = require('./package.json');

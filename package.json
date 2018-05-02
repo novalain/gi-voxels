@@ -1,8 +1,8 @@
 {
-  "name": "siick-engine",
+  "name": "gi-engine",
   "version": "1.0.0",
-  "description": "Simple data-oriented WebGL2 engine\"",
-  "main": "lib/siick-engine.js",
+  "description": "Playground web engine focused on modern gi methods\"",
+  "main": "lib/gi-engine.js",
   "scripts": {
     "build": "webpack --env build",
     "dev": "start http://localhost:8000/ & webpack-dev-server --env dev --progress --colors --watch"
