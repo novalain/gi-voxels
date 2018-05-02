@@ -156,7 +156,7 @@ class ConeTracerShader {
                 float maxDistance = voxelConeMaxDist * voxelWorldSize;
                 int count = 0;
 
-                while (dist < maxDistance && alpha < 1.0) {
+                while (dist < maxDistance && alpha < 0.95) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * aperture * dist);
                     float mip = log2(diameter / voxelWorldSize);
@@ -164,13 +164,13 @@ class ConeTracerShader {
                     vec3 worldPosition = startPos + dist * direction;
                     vec4 voxelColor = textureLod(voxelTexture, scaleAndBias(worldPosition / sceneScale), mip);
 
-                    if (voxelColor.a > 0.0) {
+                   // if (voxelColor.a > 0.0) {
                         // front-to-back compositing
                         float a = (1.0 - alpha);
                         color = color + a * voxelColor.rgb;
                         alpha = alpha + a * voxelColor.a;
                         occlusion = occlusion + a * voxelColor.a;
-                    }
+                    //}
 
                     // step along the ray
                     dist = dist + diameter * voxelConeStepSize;
@@ -179,21 +179,7 @@ class ConeTracerShader {
                 return vec4(color, alpha);
             }
 
-            vec3 coneTraceDirectLightning(out float outOcclusion) {
-                vec4 color = vec4(0);
-                for(int i = 0; i < NUM_CONES; i++) {
-                    float occlusion = 0.0;
-                    // 60 degree cones -> tan(30) = 0.577
-                    // 90 degree cones -> tan(45) = 1.0
-                    color += coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, occlusion);
-                    outOcclusion += coneWeights[i] * occlusion;
-                }
-                outOcclusion = 1.0 - outOcclusion;
-                return color.xyz;
-            }
-
             void main() {
-
                 if (hasDissolveMap) {
                     if (texture(dissolveMap, vec2(vUv.x, 1.0 - vUv.y)).r  < 0.1) {
                         discard;
@@ -214,39 +200,52 @@ class ConeTracerShader {
                 vec3 L = normalize(directional_world);
                 vec3 E = normalize(camera_world);
 
-                vec3 diffuseReflection;
-                {
-                    float visibility = 1.0;
-                    if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.0005){
-                        //visibility = indirectMultiplier > 0.0 ? texture( shadowMap, position_depth.xy ).r : 0.0;
-                        visibility = 0.0;
-                    }
+                float visibility = 1.0;
+                if (texture(shadowMap, position_depth.xy).r  <  position_depth.z - 0.0005){
+                    //visibility = indirectMultiplier > 0.0 ? texture( shadowMap, position_depth.xy ).r : 0.0;
+                    visibility = 0.0;
+                }
 
+                // Direct + indirect lightning
+                vec3 diffuseReflection = vec3(0.0);
+                {
                     // Direct diffuse light
                     float cosTheta = max(0.0, dot(N, L));
                     vec3 directDiffuseLight = directMultiplier * vec3(visibility * cosTheta);
 
-                    // Indirect diffuse light
-                    vec3 indirectDiffuseLight = indirectMultiplier * 2.0 * coneTraceDirectLightning(occlusion);
+                    // Indirect lightning
+                    vec4 indirectDiffuseLight;
+                    for(int i = 0; i < NUM_CONES; i++) {
+                        float tmpocc = 0.0;
+                        // 60 degree cones -> tan(30) = 0.577
+                        // 90 degree cones -> tan(45) = 1.0
+                        indirectDiffuseLight = indirectDiffuseLight + coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, tmpocc);
+                        occlusion = occlusion + coneWeights[i] * tmpocc;
+                    }
+
+                    indirectDiffuseLight = indirectMultiplier * 2.0 * indirectDiffuseLight;
+
+                    occlusion = 1.0 - occlusion;
                     occlusion = min(1.0, occlusionMultiplier * occlusion); // Make occlusion brighter
 
-                    diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight) * materialColor.rgb;
+                    diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight.xyz) * materialColor.rgb;
                 }
 
-                // Calculate specular light
-                vec3 specularReflection;
+                // Specular light
+                vec3 specularReflection = vec3(0.0);
                 {
                     vec4 specularColor = vec4(1.0);
-                    if (hasSpecularMap) {
-                        specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                    if (hasSpecularMap)  {
+                        vec4 specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                        specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
                     }
-                    specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
+                    
                     vec3 reflectDir = normalize(-E - 2.0 * dot(-E, N) * N);
 
                     // Trace single cone
-                    float specularOcclusion;
+                    float specularOcclusion = 0.0;
                     vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-                    specularReflection = 2.0 * mspecular.xyz * specularOcclusion * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
+                    specularReflection = 2.0 * specularOcclusion *specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {

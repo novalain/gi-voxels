@@ -148,9 +148,6 @@ class StandardShader {
                 }
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
-
-                vec3 L = normalize()
-
                 vec3 L = normalize(directional_world);
                 vec3 E = normalize(camera_world);
 
@@ -158,7 +155,7 @@ class StandardShader {
 
                 float visibility = 1.0;
                 if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005) {
-                    visibility = 1.0;
+                    visibility = 0.0;
                 }
 
                 float cosTheta = max(0.0, dot(N, L));

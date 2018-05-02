@@ -3,7 +3,7 @@ const dat = require('dat.gui').default;
 class Gui {
   constructor() {
     this._gui = new dat.GUI();
-    this._lightsFolder = this._gui.addFolder("Lights");
+    //this._lightsFolder = this._gui.addFolder("Lights");
     //this.test = {displayBump: true};
     this.displayBump = false;
     this.displaySpecular = false;
@@ -26,9 +26,9 @@ class Gui {
 
     this.voxelConeStepSize = 0.8;
     this.voxelConeMaxDist = 25.0;
-    this.indirectLightningMultiplier = 4.0;
+    this.indirectLightningMultiplier = 6.0;
     this.directLightningMultiplier = 1.5;
-    this.specularLightningMultiplier = 1.0;
+    this.specularLightningMultiplier = 0.6;
     this.occlusionMultiplier = 1.5;
 
     this._voxelFolder.add(this, 'indirectLightningMultiplier', 0.0, 10.0).name("Indirect light");

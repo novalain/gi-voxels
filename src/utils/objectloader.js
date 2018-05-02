@@ -25,9 +25,7 @@ class ObjectLoader {
     });
   }
 
-  loadModelsAndMaterials(objectList) {
-
-    const scale = 200.0;
+  loadModelsAndMaterials(objectList, scale = 1.0) {
     return new Promise(resolve => {
       const p = OBJ.downloadModels(objectList);
       p.then(models => {
