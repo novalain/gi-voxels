@@ -6,6 +6,9 @@ Playground engine using webgl2 focusing on modern rendering and global illuminat
   <img src="dist/img/pre_noartifacts.png" width = "512"/>
 </p>
 
+## Demo 
+Available [here](http://novalain.github.io/gi-voxels) 
+
 ## Features
 * Global Illumination using Voxel Cone Tracing <br>
 (Cyril Crassin, Fabrice Neyret, Miguel Saintz, Simon Green and Elmar Eisemann) https://research.nvidia.com/sites/default/files/publications/GIVoxels-pg2011-authors.pdf
