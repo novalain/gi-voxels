@@ -94,14 +94,14 @@ class VoxelizationShader {
             float visibility = 1.0;
             if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005){
                 //visibility = texture( shadowMap, position_depth.xy ).r;
-                visibility = 0.2;
+                visibility = 0.0;
             }
 
             float cosTheta = visibility *  max(dot(N, L), 0.0);
 
             if (hasDiffuseMap) {
                 float alpha = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)).a;
-                layer0 = cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
+                layer0 = 0.5 * visibility * cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                 layer0.a = alpha;
             } else {
                 layer0 = vec4(cosTheta * mdiffuse.xyz, 1.0);

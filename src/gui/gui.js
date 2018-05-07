@@ -25,18 +25,18 @@ class Gui {
     this.voxelDebugStepSize = 5.0;
 
     this.voxelConeStepSize = 0.8;
-    this.voxelConeMaxDist = 25.0;
-    this.indirectLightningMultiplier = 6.0;
-    this.directLightningMultiplier = 1.5;
-    this.specularLightningMultiplier = 0.6;
-    this.occlusionMultiplier = 1.5;
+    this.voxelConeMaxDist = 207.0;
+    this.indirectLightningMultiplier = 124;
+    this.directLightningMultiplier = 2.0;
+    this.specularLightningMultiplier = 9;
+    this.occlusionMultiplier = 0.6;
 
-    this._voxelFolder.add(this, 'indirectLightningMultiplier', 0.0, 10.0).name("Indirect light");
+    this._voxelFolder.add(this, 'indirectLightningMultiplier', 0.0, 500.0).name("Indirect light");
     this._voxelFolder.add(this, 'directLightningMultiplier', 0.0, 10.0).name("Direct light");
-    this._voxelFolder.add(this, 'specularLightningMultiplier', 0.0, 10.0).name("Specular light");
+    this._voxelFolder.add(this, 'specularLightningMultiplier', 0.0, 50.0).name("Specular light");
     this._voxelFolder.add(this, 'occlusionMultiplier', 0.0, 5.0).name("Occlusion");
-    this._voxelFolder.add(this, 'voxelConeStepSize', 0.1, 2.0).name("Step Size");
-    this._voxelFolder.add(this, 'voxelConeMaxDist', 1.0, 50.0).name("Trace Dist");
+    this._voxelFolder.add(this, 'voxelConeStepSize', 0.1, 5.0).name("Step Size");
+    this._voxelFolder.add(this, 'voxelConeMaxDist', 1.0, 500.0).name("Trace Dist");
     this._voxelFolder.add(this, 'displayOcclusion').name("Show AO");
 
     this._useVoxelGI = this._gui.add(this, 'useVoxelGI').name("Voxel GI");

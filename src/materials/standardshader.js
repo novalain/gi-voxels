@@ -36,16 +36,14 @@ class StandardShader {
 
             out vec3 normal_world;
             out mat3 tangentToWorld;
+            mat4 biasMatrix = mat4(
+                0.5, 0.0, 0.0, 0.0,
+                0.0, 0.5, 0.0, 0.0,
+                0.0, 0.0, 0.5, 0.0,
+                0.5, 0.5, 0.5, 1.0
+            );
 
             void main() {
-
-                mat4 biasMatrix = mat4(
-                    0.5, 0.0, 0.0, 0.0,
-                    0.0, 0.5, 0.0, 0.0,
-                    0.0, 0.0, 0.5, 0.0,
-                    0.5, 0.5, 0.5, 1.0
-                );
-
                 position_world = (modelMatrix * vec4(position, 1.0)).xyz;
                 position_depth = biasMatrix * depthMVP * vec4(position, 1.0);
 

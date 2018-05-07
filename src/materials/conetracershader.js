@@ -190,10 +190,10 @@ class ConeTracerShader {
 
                 vec4 materialColor = vec4(1.0);
                 float alpha = 1.0;
-                if (hasDiffuseMap) {
+                //if (hasDiffuseMap) {
                     materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                     alpha = materialColor.a;
-                }
+                //}
                 float occlusion = 0.0;
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
@@ -234,18 +234,18 @@ class ConeTracerShader {
                 // Specular light
                 vec3 specularReflection = vec3(0.0);
                 {
-                    vec4 specularColor = vec4(1.0);
-                    if (hasSpecularMap)  {
+                   // vec4 specularColor = vec4(1.0);
+                   // if (hasSpecularMap)  {
                         vec4 specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                         specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
-                    }
+                    //}
                     
                     vec3 reflectDir = normalize(-E - 2.0 * dot(-E, N) * N);
 
                     // Trace single cone
                     float specularOcclusion = 0.0;
                     vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-                    specularReflection = 2.0 * specularOcclusion *specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
+                    specularReflection = 2.0 * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
                 }
 
                 if (displayNormalMap && hasNormalMap) {
