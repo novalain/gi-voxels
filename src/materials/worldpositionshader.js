@@ -13,14 +13,6 @@ class WorldPositionShader {
             layout(location = 1) in vec3 normal;
             layout(location = 2) in vec2 uv;
 
-            // layout(location = 3) in vec3 tangent;
-            // layout(location = 4) in vec3 bitangent;
-           
-            // layout (std140) uniform modelMatrices {
-            //     mat4 modelMatrix;
-            //     mat4 normalMatrix;
-            // };
-
             layout (std140) uniform sceneBuffer {
                 mat4 viewMatrix;
                 mat4 projectionMatrix;
@@ -29,34 +21,21 @@ class WorldPositionShader {
             };
 
             out vec3 worldPosition;
-    
+
             void main() {
                 worldPosition = vec3(vec4(position, 1.0));
                 gl_Position = projectionMatrix * viewMatrix * vec4(position, 1.0);
             }
         `;
 
-        const fsSource = `#version 300 es 
+        const fsSource = `#version 300 es
             precision highp float;
-            
+
             in vec3 worldPosition;
             out vec4 outColor;
 
             const int MAX_POINT_LIGHTS = 8;
 
-            // TODO remoev
-            // layout (std140) uniform materialBuffer {
-            //     vec4 mambient; // 16 0 - base | aligned offset
-            //     vec4 mdiffuse; // 16 16
-            //     //vec4 memissive;
-            //     vec4 mspecular; // 16 32
-            //     float specularExponent; // 4 48
-            //     bool hasDiffuseMap; // 4 52
-            //     bool hasNormalMap; // 4 56
-            //     bool hasSpecularMap; // 4 60
-            //     bool hasDissolveMap; // 4 64
-            // };
-            
             void main() {
                 outColor.rgb = worldPosition;
                 outColor.a = 1.0;

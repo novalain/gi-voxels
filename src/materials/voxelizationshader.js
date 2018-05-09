@@ -53,7 +53,7 @@ class VoxelizationShader {
     const fsSource = `#version 300 es
         precision highp float;
         precision highp int;
-        precision mediump sampler2DShadow;
+        precision highp sampler2DShadow;
 
         in vec2 vUv;
         in vec3 normal_world;
@@ -81,7 +81,7 @@ class VoxelizationShader {
         uniform sampler2D bumpMap;
         uniform sampler2D specularMap;
         uniform sampler2D dissolveMap;
-        uniform sampler2D shadowMap;
+        uniform sampler2DShadow shadowMap;
 
         layout(location = 0) out vec4 layer0;
 
@@ -89,23 +89,21 @@ class VoxelizationShader {
             vec3 L = normalize(directional_world);
             vec3 N = normalize(normal_world);
 
-            // why you not work
-            //float visibility = texture(shadowMap, vec3(position_depth.xy, position_depth.z / position_depth.w), 0.005);
-            float visibility = 1.0;
-            if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005){
+            float visibility = texture(shadowMap, vec3(position_depth.xy, (position_depth.z - 0.001)/position_depth.w));
+            //if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005){
                 //visibility = texture( shadowMap, position_depth.xy ).r;
-                visibility = 0.0;
-            }
+             //   visibility = 0.0;
+            //}
 
             float cosTheta = visibility *  max(dot(N, L), 0.0);
 
-            if (hasDiffuseMap) {
+            //if (hasDiffuseMap) {
                 float alpha = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y)).a;
-                layer0 = 0.5 * visibility * cosTheta * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
-                layer0.a = alpha;
-            } else {
-                layer0 = vec4(cosTheta * mdiffuse.xyz, 1.0);
-            }
+                layer0 = visibility * texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
+                layer0.a = 1.0;
+            //} else {
+            //    layer0 = vec4(cosTheta * mdiffuse.xyz, 1.0);
+           // }
         }
     `;
 

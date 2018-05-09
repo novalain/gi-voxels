@@ -66,6 +66,7 @@ class StandardShader {
 
         const fsSource = `#version 300 es
             precision highp float;
+            precision highp sampler2DShadow;
             precision mediump sampler3D;
 
             layout (std140) uniform materialBuffer {
@@ -90,7 +91,7 @@ class StandardShader {
             uniform sampler2D bumpMap;
             uniform sampler2D specularMap;
             uniform sampler2D dissolveMap;
-            uniform sampler2D shadowMap;
+            uniform sampler2DShadow shadowMap;
             uniform sampler3D voxelTexture;
 
             uniform float sceneScale;
@@ -151,10 +152,7 @@ class StandardShader {
 
                 float alpha = 1.0;
 
-                float visibility = 1.0;
-                if (texture( shadowMap, position_depth.xy ).r  <  position_depth.z - 0.005) {
-                    visibility = 0.0;
-                }
+                float visibility = texture(shadowMap, vec3(position_depth.xy, (position_depth.z - 0.0005) / position_depth.w));
 
                 float cosTheta = max(0.0, dot(N, L));
                 vec3 directDiffuseLight = 2.0 * mdiffuse.xyz * vec3(visibility * cosTheta);

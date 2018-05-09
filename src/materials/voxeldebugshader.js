@@ -36,7 +36,7 @@ class VoxelDebugShader {
             uniform float sceneScale;
 
             in vec2 textureCoordinateFrag;
-            out vec4 color;
+            out vec4 outColor;
 
             // Scales and bias a given vector (i.e. from [-1, 1] to [0, 1]).
             vec3 scaleAndBias(vec3 p) { return 0.5 * p + vec3(0.5); }
@@ -48,21 +48,27 @@ class VoxelDebugShader {
                 int numberOfSteps = int( length(direction) / stepLength);
                 direction = normalize(direction);
 
-                color = vec4(0.0);
+                vec3 color = vec3(0.0);
+                float alpha = 0.0;
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + stepLength * float(i) * direction;
                     vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint / sceneScale), mipmapLevel);
 
-                    if (currentSample.a > 0.0) {
-                        currentSample.rgb /= currentSample.a;
-                        color.rgb = color.rgb + (1.0 - color.a) * currentSample.a * currentSample.rgb;
-                        color.a   = color.a   + (1.0 - color.a) * currentSample.a;
-                    }
-                    if (color.a > 0.95) {
+                    float a = (1.0 - alpha);
+                    color = color + a * currentSample.rgb;
+                    alpha = alpha + a * currentSample.a;
+                    // if (currentSample.a > 0.0) {
+                    //     currentSample.rgb /= currentSample.a;
+                    //     color.rgb = color.rgb + (1.0 - color.a) * currentSample.a * currentSample.rgb;
+                    //     color.a   = color.a   + (1.0 - color.a) * currentSample.a;
+                    // }
+                    if (alpha > 0.95) {
                         break;
                     }
-                    color += currentSample;
+                    //color += currentSample;
                 }
+
+                outColor = vec4(color, alpha);
                 //color.rgb = pow(color.rgb, vec3(1.0 / 3.2));
             }
     `;

@@ -68,7 +68,8 @@ class ConeTracerShader {
 
         const fsSource = `#version 300 es
             precision highp float;
-            precision mediump sampler3D;
+            precision highp sampler3D;
+            precision highp sampler2DShadow;
 
             layout (std140) uniform materialBuffer {
                 vec4 mambient; // 16 0 - base | aligned offset
@@ -92,7 +93,7 @@ class ConeTracerShader {
             uniform sampler2D bumpMap;
             uniform sampler2D specularMap;
             uniform sampler2D dissolveMap;
-            uniform sampler2D shadowMap;
+            uniform sampler2DShadow shadowMap;
             uniform sampler3D voxelTexture;
 
             uniform float sceneScale;
@@ -156,6 +157,7 @@ class ConeTracerShader {
                 float maxDistance = voxelConeMaxDist * voxelWorldSize;
                 int count = 0;
 
+                // Accumulate lightning in voxel direction
                 while (dist < maxDistance && alpha < 0.95) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * aperture * dist);
@@ -164,7 +166,7 @@ class ConeTracerShader {
                     vec3 worldPosition = startPos + dist * direction;
                     vec4 voxelColor = textureLod(voxelTexture, scaleAndBias(worldPosition / sceneScale), mip);
 
-                   // if (voxelColor.a > 0.0) {
+                    // if (voxelColor.a > 0.0) {
                         // front-to-back compositing
                         float a = (1.0 - alpha);
                         color = color + a * voxelColor.rgb;
@@ -188,23 +190,19 @@ class ConeTracerShader {
 
                 voxelWorldSize = sceneScale / voxelResolution;
 
-                vec4 materialColor = vec4(1.0);
+                vec4 materialColor = vec4(0.0);
                 float alpha = 1.0;
-                //if (hasDiffuseMap) {
+                if (hasDiffuseMap) {
                     materialColor = texture(textureMap, vec2(vUv.x, 1.0 - vUv.y));
                     alpha = materialColor.a;
-                //}
+                }
                 float occlusion = 0.0;
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
                 vec3 L = normalize(directional_world);
-                vec3 E = normalize(camera_world - position_world);
+                vec3 E = -normalize(camera_world - position_world);
 
-                float visibility = 1.0;
-                if (texture(shadowMap, position_depth.xy).r  <  position_depth.z - 0.0005){
-                    //visibility = indirectMultiplier > 0.0 ? texture( shadowMap, position_depth.xy ).r : 0.0;
-                    visibility = 0.0;
-                }
+                float visibility = texture(shadowMap, vec3(position_depth.xy, (position_depth.z - 0.0005)/position_depth.w));
 
                 // Direct + indirect lightning
                 vec3 diffuseReflection = vec3(0.0);
@@ -215,36 +213,36 @@ class ConeTracerShader {
 
                     // Indirect lightning
                     vec4 indirectDiffuseLight;
-                    for(int i = 0; i < NUM_CONES; i++) {
+                    for (int i = 0; i < NUM_CONES; i++) {
                         float tmpocc = 0.0;
                         // 60 degree cones -> tan(30) = 0.577
-                        // 90 degree cones -> tan(45) = 1.0
                         indirectDiffuseLight = indirectDiffuseLight + coneWeights[i] * coneTrace(tangentToWorld * coneDirections[i], 0.577, tmpocc);
                         occlusion = occlusion + coneWeights[i] * tmpocc;
                     }
 
-                    indirectDiffuseLight = indirectMultiplier * 2.0 * indirectDiffuseLight;
+                    indirectDiffuseLight = indirectMultiplier * indirectDiffuseLight;
 
                     occlusion = 1.0 - occlusion;
-                    occlusion = min(1.0, occlusionMultiplier * occlusion); // Make occlusion brighter
-
-                    diffuseReflection = 2.0 * occlusion * mdiffuse.xyz * (directDiffuseLight + indirectDiffuseLight.xyz) * materialColor.rgb;
+                    diffuseReflection = occlusion * (directDiffuseLight + indirectDiffuseLight.xyz) * materialColor.rgb;
                 }
 
                 // Specular light
                 vec3 specularReflection = vec3(0.0);
-                {
-                   // vec4 specularColor = vec4(1.0);
-                   // if (hasSpecularMap)  {
-                        vec4 specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
-                        specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
-                    //}
-                    vec3 reflectDir = normalize(-E - 2.0 * dot(-E, N) * N);
 
-                    // Trace single cone
-                    float specularOcclusion = 0.0;
-                    vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.2 = 22.6 degrees, 0.1 = 11.4 degrees, 0.07 = 8 degrees angle
-                    specularReflection = 2.0 * specularMultiplier * specularColor.rgb * tracedSpecular.rgb;
+                if (hasSpecularMap)  {
+                    {
+                        vec4 specularColor = vec4(1.0);
+                        specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
+                        specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
+                        //specularColor = vec4(spec, spec, spec, 1.0);
+                        vec3 reflectDir = normalize(E - 2.0 * dot(E, N) * N);
+
+                        // Trace single cone
+                        float specularOcclusion = 0.0;
+                        vec4 tracedSpecular = coneTrace(reflectDir, 0.07, specularOcclusion); // 0.07 = tan(8)
+                        specularReflection = specularMultiplier  * specularColor.rgb * tracedSpecular.rgb;
+                    }
+
                 }
 
                 if (displayNormalMap && hasNormalMap) {
