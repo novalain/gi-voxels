@@ -198,7 +198,7 @@ class ConeTracerShader {
 
                 vec3 N = hasNormalMap ? calculateBumpNormal() : normalize(normal_world.xyz);
                 vec3 L = normalize(directional_world);
-                vec3 E = normalize(camera_world);
+                vec3 E = normalize(camera_world - position_world);
 
                 float visibility = 1.0;
                 if (texture(shadowMap, position_depth.xy).r  <  position_depth.z - 0.0005){
@@ -239,7 +239,6 @@ class ConeTracerShader {
                         vec4 specularColor = texture(specularMap, vec2(vUv.x, 1.0 - vUv.y));
                         specularColor = length(specularColor.gb) > 0.0 ? specularColor : specularColor.rrra;
                     //}
-                    
                     vec3 reflectDir = normalize(-E - 2.0 * dot(-E, N) * N);
 
                     // Trace single cone
