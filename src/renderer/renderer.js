@@ -291,7 +291,7 @@ class Renderer {
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
    //gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clearColor(127.0, 0.0, 0.0, 1.0);
+    gl.clearColor(127.0, 127.0, 127.0, 1.0);
     gl.clearDepth(1.0);  // TODO remove
 
     gl.cullFace(gl.BACK);
