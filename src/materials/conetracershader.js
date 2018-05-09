@@ -96,8 +96,10 @@ class ConeTracerShader {
             uniform sampler2DShadow shadowMap;
             uniform sampler3D voxelTexture;
 
-            uniform float sceneScale;
-            uniform float voxelResolution;
+            uniform float sceneScaleInv;
+            uniform float voxelWorldSize;
+            uniform float voxelWorldSizeInv;
+            
             uniform vec3 camera_world;
 
             in vec2 vUv;
@@ -109,7 +111,6 @@ class ConeTracerShader {
 
             out vec4 outColor;
 
-            float voxelWorldSize;
 
             const int NUM_CONES = 6;
             vec3 coneDirections[6] = vec3[](
@@ -161,10 +162,10 @@ class ConeTracerShader {
                 while (dist < maxDistance && alpha < 0.95) {
                     // smallest sample diameter possible is the voxel size
                     float diameter = max(voxelWorldSize, 2.0 * aperture * dist);
-                    float mip = log2(diameter / voxelWorldSize);
+                    float mip = log2(diameter * voxelWorldSizeInv);
 
                     vec3 worldPosition = startPos + dist * direction;
-                    vec4 voxelColor = textureLod(voxelTexture, scaleAndBias(worldPosition / sceneScale), mip);
+                    vec4 voxelColor = textureLod(voxelTexture, scaleAndBias(worldPosition * sceneScaleInv), mip);
 
                     // if (voxelColor.a > 0.0) {
                         // front-to-back compositing
@@ -187,8 +188,6 @@ class ConeTracerShader {
                         discard;
                     }
                 }
-
-                voxelWorldSize = sceneScale / voxelResolution;
 
                 vec4 materialColor = vec4(0.0);
                 float alpha = 1.0;

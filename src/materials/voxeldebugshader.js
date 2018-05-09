@@ -33,7 +33,7 @@ class VoxelDebugShader {
 
             uniform float mipmapLevel;
             uniform float stepLength;
-            uniform float sceneScale;
+            uniform float sceneScaleInv;
 
             in vec2 textureCoordinateFrag;
             out vec4 outColor;
@@ -52,7 +52,7 @@ class VoxelDebugShader {
                 float alpha = 0.0;
                 for(int i = 0; i < numberOfSteps; ++i) {
                     vec3 currentPoint = origin + stepLength * float(i) * direction;
-                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint / sceneScale), mipmapLevel);
+                    vec4 currentSample = textureLod(texture3D, scaleAndBias(currentPoint * sceneScaleInv), mipmapLevel);
 
                     float a = (1.0 - alpha);
                     color = color + a * currentSample.rgb;

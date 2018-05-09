@@ -16,6 +16,11 @@ class VoxelConeTracer {
     const gl = glContext();
 
     this.sceneScale = sceneScale;
+
+    this.sceneScaleInv = 1.0 / sceneScale;
+    this.voxelWorldSize = sceneScale / resolution;
+    this.voxelWorldSizeInv = 1.0 / this.voxelWorldSize;
+
     this.voxelTextureSize = resolution;
     const cube = new Cube(cubeSize, cubeSize, cubeSize);
     this.cubeMesh = new Mesh(cube.geometry, cube.indices);
@@ -106,7 +111,7 @@ class VoxelConeTracer {
     // Set uniforms
     gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'mipmapLevel'), scene.gui.voxelMipmap);
     gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'stepLength'), scene.gui.voxelDebugStepSize);
-    gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'sceneScale'), this.sceneScale);
+    gl.uniform1f(gl.getUniformLocation(this.voxelDebugShader.program, 'sceneScaleInv'), this.sceneScaleInv);
 
     gl.uniform3fv(gl.getUniformLocation(this.voxelDebugShader.program, 'cameraPosition'), camera.position);
     gl.activeTexture(gl.TEXTURE0 + 0);
@@ -361,8 +366,9 @@ class VoxelConeTracer {
     // Set the uniform block binding for the active program
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'guiDataBuffer'), guiUBO.location);
     gl.uniformBlockBinding(program, gl.getUniformBlockIndex(program, 'sceneBuffer'), sceneUBO.location);
-    gl.uniform1f(gl.getUniformLocation(program, 'sceneScale'), this.sceneScale);
-    gl.uniform1f(gl.getUniformLocation(program, 'voxelResolution'), this.voxelTextureSize);
+    gl.uniform1f(gl.getUniformLocation(program, 'sceneScaleInv'), this.sceneScaleInv);
+    gl.uniform1f(gl.getUniformLocation(program, 'voxelWorldSize'), this.voxelWorldSize);
+    gl.uniform1f(gl.getUniformLocation(program, 'voxelWorldSizeInv'), this.voxelWorldSizeInv);
     gl.uniform3fv(gl.getUniformLocation(program, 'camera_world'), camera.position);
 
     // Render scene normal
