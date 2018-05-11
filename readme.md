@@ -3,7 +3,7 @@
 Playground engine using webgl2 focusing on modern rendering and global illumination techniques.
 
 <p align="center">
-  <img src="dist/img/prenew.png" width = "512"/>
+  <img src="dist/img/prenew2.png" width = "512"/>
 </p>
 
 ## Demo 
